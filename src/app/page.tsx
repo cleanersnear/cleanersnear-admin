@@ -1,9 +1,41 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useCallback } from 'react'
+import { siteConfig } from '@/config/site'
+
+interface OrganizationButtonProps {
+  title: string
+  description: string
+  onClick: () => void
+  disabled?: boolean
+}
+
+const OrganizationButton = ({ title, description, onClick, disabled = false }: OrganizationButtonProps) => (
+  <button
+    className={`p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-all 
+               border-2 border-gray-100 hover:border-gray-200
+               flex flex-col items-center justify-center
+               ${disabled ? 'opacity-50 cursor-not-allowed' : 'group'}`}
+    onClick={onClick}
+    disabled={disabled}
+    aria-disabled={disabled}
+  >
+    <h2 className={`text-xl font-semibold text-gray-900 mb-2 ${!disabled && 'group-hover:text-blue-600'}`}>
+      {title}
+    </h2>
+    <p className="text-gray-500 text-sm">
+      {description}
+    </p>
+  </button>
+)
 
 export default function Home() {
   const router = useRouter()
+
+  const handleOrganizationSelect = useCallback((path: string) => {
+    router.push(path)
+  }, [router])
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-8">
@@ -17,39 +49,22 @@ export default function Home() {
       </div>
 
       <div className="grid gap-6 w-full max-w-2xl">
-        <button
-          className="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-all 
-                     border-2 border-gray-100 hover:border-gray-200
-                     flex flex-col items-center justify-center
-                     group"
-          onClick={() => router.push('/dashboard')}
-        >
-          <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600">
-            Cleaning Professionals
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Manage bookings and services for Cleaning Professionals
-          </p>
-        </button>
+        <OrganizationButton
+          title={siteConfig.organization.name}
+          description={siteConfig.organization.description}
+          onClick={() => handleOrganizationSelect('/dashboard')}
+        />
 
-        <button
-          className="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-all 
-                     border-2 border-gray-100 hover:border-gray-200
-                     flex flex-col items-center justify-center
-                     opacity-50 cursor-not-allowed"
+        <OrganizationButton
+          title={siteConfig.comingSoon.name}
+          description={siteConfig.comingSoon.description}
+          onClick={() => {}}
           disabled
-        >
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Cleaner Near
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Coming Soon
-          </p>
-        </button>
+        />
       </div>
 
       <div className="mt-12 text-sm text-gray-500">
-        © 2024 Admin Dashboard
+        © {new Date().getFullYear()} {siteConfig.name}
       </div>
     </div>
   )

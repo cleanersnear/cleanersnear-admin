@@ -1,27 +1,39 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from 'date-fns'
-import { Search, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 // Types based on your Supabase schema
-type Customer = {
+interface Customer {
   id: string
   first_name: string
   last_name: string
   email: string
   phone: string
-  address: any
+  address: {
+    street?: string
+    city?: string
+    suburb?: string
+    postcode?: string
+  }
+  scheduling: {
+    date: string
+    time: string
+    is_flexible: boolean
+  }
 }
 
-type Booking = {
-  id: string                  // uuid
-  booking_number: string      // character varying
-  customer_id: string         // uuid
-  service_type: string        // character varying
-  status: string             // character varying
-  total_price: number        // numeric
+interface Booking {
+  id: string
+  booking_number: string
+  customer_id: string
+  service_type: string
+  status: string
+  total_price: number
   location: {
     suburb?: string
     postcode?: string
@@ -33,31 +45,33 @@ type Booking = {
     is_flexible?: boolean
     preferred_time?: string
   }
-  created_at: string         // timestamp with timezone
-  updated_at: string         // timestamp with timezone
-}
-
-type BookingAdminDetails = {
-  id: string
-  booking_id: string
-  payment_status: string
-  payment_method: string
-  staff_assigned: {
-    name?: string
-    id?: string
-    role?: string
-  }[]
-  admin_notes: string
   created_at: string
   updated_at: string
 }
 
-type BookingWithAdmin = Booking & {
-  admin_details?: BookingAdminDetails,
-  customer?: Customer  // Add customer to the type
+interface BookingAdminDetails {
+  id: string
+  booking_id: string
+  payment_status: string
+  staff_assigned: {
+    id?: string
+    name?: string
+  }[]
+  payments: {
+    id: string
+    amount: number
+    payment_method: string
+    payment_date: string
+  }[]
+}
+
+interface BookingWithAdmin extends Booking {
+  admin_details?: BookingAdminDetails
+  customer?: Customer
 }
 
 export default function BookingsPage() {
+  const router = useRouter()
   const [bookings, setBookings] = useState<BookingWithAdmin[]>([])
   const [filteredBookings, setFilteredBookings] = useState<BookingWithAdmin[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -68,60 +82,57 @@ export default function BookingsPage() {
   const itemsPerPage = 10
   const supabase = createClientComponentClient()
 
-  useEffect(() => {
-    fetchBookings()
-  }, [])
-
-  // Apply filters whenever bookings, search term, or filters change
-  useEffect(() => {
-    filterBookings()
-  }, [bookings, searchTerm, statusFilter, serviceFilter])
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
-      console.log('Attempting to fetch bookings...')
-      
-      // First get all bookings
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          admin_details:booking_admin_details!booking_id(*)
-        `)
-        .order('created_at', { ascending: false })
-
-      if (bookingsError) throw bookingsError
-
-      // Then get customer data for these bookings
-      if (bookingsData) {
-        const { data: customersData, error: customersError } = await supabase
-          .from('customers')
+      setIsLoading(true)
+      const [bookingsResponse, adminDetailsResponse, customersResponse] = await Promise.all([
+        supabase
+          .from('bookings')
           .select('*')
-          .in('booking_id', bookingsData.map(b => b.id))
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('booking_admin_details')
+          .select(`
+            booking_id,
+            payment_status,
+            staff_assigned,
+            payments
+          `),
+        supabase
+          .from('customers')
+          .select(`
+            booking_id,
+            first_name,
+            last_name,
+            email,
+            scheduling,
+            phone
+          `)
+      ])
 
-        if (customersError) throw customersError
+      if (bookingsResponse.error) throw bookingsResponse.error
+      if (adminDetailsResponse.error) throw adminDetailsResponse.error
+      if (customersResponse.error) throw customersResponse.error
 
-        // Merge the data
-        const mergedData = bookingsData.map(booking => ({
-          ...booking,
-          customer: customersData?.find(c => c.booking_id === booking.id) || null
-        }))
+      const mergedData = bookingsResponse.data.map(booking => ({
+        ...booking,
+        admin_details: adminDetailsResponse.data?.find(ad => ad.booking_id === booking.id),
+        customer: customersResponse.data?.find(c => c.booking_id === booking.id)
+      }))
 
-        console.log('Merged data:', mergedData)
-        setBookings(mergedData)
-        setFilteredBookings(mergedData)
-      }
+      setBookings(mergedData)
+      setFilteredBookings(mergedData)
     } catch (error) {
-      console.error('Error details:', error)
+      console.error('Error fetching data:', error)
+      toast.error('Failed to load bookings')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase])
 
-  const filterBookings = () => {
+  const filterBookings = useCallback(() => {
     let filtered = [...bookings]
 
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(booking =>
         booking.booking_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,48 +140,53 @@ export default function BookingsPage() {
       )
     }
 
-    // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(booking => booking.status === statusFilter)
     }
 
-    // Apply service filter
     if (serviceFilter !== 'all') {
       filtered = filtered.filter(booking => booking.service_type === serviceFilter)
     }
 
     setFilteredBookings(filtered)
-  }
+  }, [bookings, searchTerm, statusFilter, serviceFilter])
+
+  useEffect(() => {
+    fetchBookings()
+  }, [fetchBookings])
+
+  useEffect(() => {
+    filterBookings()
+  }, [filterBookings])
 
   const getStatusColor = (status: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       pending: 'bg-yellow-100 text-yellow-800',
       confirmed: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800',
       completed: 'bg-blue-100 text-blue-800',
     }
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+    return colors[status] || 'bg-gray-100 text-gray-800'
   }
 
-  // Get unique service types for filter
   const serviceTypes = ['all', ...new Set(bookings.map(b => b.service_type))]
   const statusTypes = ['all', 'pending', 'confirmed', 'cancelled', 'completed']
 
-  // Add pagination calculation
   const paginateBookings = (bookings: BookingWithAdmin[]) => {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     return bookings.slice(startIndex, endIndex)
   }
 
-  // Calculate total pages
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage)
-
-  // Add this just before the return statement
   const paginatedBookings = paginateBookings(filteredBookings)
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
   }
 
   return (
@@ -300,9 +316,6 @@ export default function BookingsPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Staff
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Notes
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -310,16 +323,20 @@ export default function BookingsPage() {
                     <tr 
                       key={booking.id}
                       className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => window.location.href = `/dashboard/bookings/${booking.id}`}
+                      onClick={() => router.push(`/dashboard/bookings/${booking.id}`)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {booking.booking_number}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {booking.customer && booking.customer.first_name 
-                          ? `${booking.customer.first_name} ${booking.customer.last_name || ''}`
-                          : 'N/A'
-                        }
+                        {booking.customer ? (
+                          <div className="flex flex-col">
+                            <span>{`${booking.customer.first_name} ${booking.customer.last_name}`}</span>
+                            <span className="text-xs text-gray-400">{booking.customer.email}</span>
+                          </div>
+                        ) : (
+                          'No customer data'
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {booking.service_type}
@@ -334,10 +351,15 @@ export default function BookingsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex flex-col">
-                          <span>{format(new Date(booking.scheduling?.date || booking.created_at), 'MMM d, yyyy')}</span>
+                          <span>
+                            {booking.customer?.scheduling?.date ? 
+                              format(new Date(booking.customer.scheduling.date), 'MMM d, yyyy') 
+                              : 'No date'
+                            }
+                          </span>
                           <span className="text-xs text-gray-400">
-                            {booking.scheduling?.time}
-                            {booking.scheduling?.is_flexible && ' (Flexible)'}
+                            {booking.customer?.scheduling?.time || 'No time'}
+                            {booking.customer?.scheduling?.is_flexible && ' (Flexible)'}
                           </span>
                         </div>
                       </td>
@@ -346,41 +368,42 @@ export default function BookingsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(booking.status)}`}>
-                          {booking.status}
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex flex-col">
                           <span className={`text-xs font-medium ${
-                            booking.admin_details?.payment_status === 'paid' 
-                              ? 'text-green-600' 
-                              : 'text-yellow-600'
+                            booking.admin_details?.payment_status === 'paid' ? 'text-green-600' :
+                            booking.admin_details?.payment_status === 'partially_paid' ? 'text-yellow-600' :
+                            booking.admin_details?.payment_status === 'refunded' ? 'text-orange-600' :
+                            'text-gray-600'
                           }`}>
-                            {booking.admin_details?.payment_status || 'Pending'}
+                            {booking.admin_details?.payment_status 
+                              ? booking.admin_details.payment_status.charAt(0).toUpperCase() + 
+                                booking.admin_details.payment_status.slice(1).replace('_', ' ')
+                              : 'Unpaid'
+                            }
                           </span>
                           <span className="text-xs text-gray-400">
-                            {booking.admin_details?.payment_method || '-'}
+                            {booking.admin_details?.payments?.[0] 
+                              ? `${booking.admin_details.payments.length} payment(s)`
+                              : 'No payments'
+                            }
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex flex-col">
-                          {booking.admin_details?.staff_assigned?.map((staff, index) => (
-                            <span key={index} className="text-xs">
-                              {staff.name || 'Unassigned'}
-                              {staff.role && <span className="text-gray-400"> ({staff.role})</span>}
-                            </span>
-                          )) || <span className="text-xs text-gray-400">Unassigned</span>}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="max-w-xs truncate">
-                          {booking.admin_details?.admin_notes ? (
-                            <span className="text-xs" title={booking.admin_details.admin_notes}>
-                              {booking.admin_details.admin_notes}
-                            </span>
+                          {booking.admin_details?.staff_assigned && 
+                           booking.admin_details.staff_assigned.length > 0 ? (
+                            booking.admin_details.staff_assigned.map((staff, index) => (
+                              <span key={index} className="text-xs">
+                                {staff.name || 'Unnamed'}
+                              </span>
+                            ))
                           ) : (
-                            <span className="text-xs text-gray-400">No notes</span>
+                            <span className="text-xs text-gray-400">Unassigned</span>
                           )}
                         </div>
                       </td>

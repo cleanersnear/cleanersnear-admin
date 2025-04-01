@@ -4,19 +4,49 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 import {
   HomeIcon,
   CalendarIcon,
   UsersIcon,
-  CogIcon,
-  ArrowLeftOnRectangleIcon,
+  UserGroupIcon,
+  InboxIcon,
+  BriefcaseIcon,
+  NewspaperIcon,
+  RssIcon,
+  QuestionMarkCircleIcon,
+  ChatBubbleLeftRightIcon,
+  ArrowLeftStartOnRectangleIcon as SignOutIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Bookings', href: '/dashboard/bookings', icon: CalendarIcon },
+  { 
+    name: 'Bookings',
+    children: [
+      { name: 'All Bookings', href: '/dashboard/bookings', icon: CalendarIcon },
+      { name: 'Invoices', href: '/dashboard/invoices', icon: DocumentTextIcon },
+    ]
+  },
+  { name: 'Enquiries', href: '/dashboard/enquiries', icon: InboxIcon },
   { name: 'Customers', href: '/dashboard/customers', icon: UsersIcon },
-  { name: 'Settings', href: '/dashboard/settings', icon: CogIcon },
+  { name: 'Staff', href: '/dashboard/staff', icon: UserGroupIcon },
+  { 
+    name: 'Content Management',
+    children: [
+      { name: 'Careers', href: '/dashboard/careers', icon: BriefcaseIcon },
+      { name: 'Blog Posts', href: '/dashboard/blogs', icon: NewspaperIcon },
+      { name: "FAQ's", href: '/dashboard/faqs', icon: QuestionMarkCircleIcon },
+    ]
+  },
+  {
+    name: 'Communications',
+    children: [
+      { name: 'Subscribers', href: '/dashboard/subscribers', icon: RssIcon },
+      { name: 'Contact Messages', href: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
+    ]
+  }
 ]
 
 export default function DashboardLayout({
@@ -29,8 +59,14 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) throw error
+        if (!session) {
+          router.replace('/auth/login')
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error)
         router.replace('/auth/login')
       }
     }
@@ -38,8 +74,12 @@ export default function DashboardLayout({
   }, [router, supabase])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.replace('/auth/login')
+    try {
+      await supabase.auth.signOut()
+      router.replace('/auth/login')
+    } catch {
+      toast.error('Failed to sign out')
+    }
   }
 
   return (
@@ -52,14 +92,30 @@ export default function DashboardLayout({
           </div>
           <nav className="flex-1 px-2 py-4 space-y-1">
             {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
-              >
-                <item.icon className="w-5 h-5 mr-3" />
-                {item.name}
-              </Link>
+              item.children ? (
+                <div key={item.name} className="space-y-1">
+                  <p className="px-2 py-2 text-sm font-medium text-gray-900">{item.name}</p>
+                  {item.children.map((child) => (
+                    <Link
+                      key={child.name}
+                      href={child.href}
+                      className="flex items-center pl-4 px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+                    >
+                      {child.icon && <child.icon className="w-5 h-5 mr-3" />}
+                      {child.name}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Link
+                  key={item.name}
+                  href={item.href || '#'}
+                  className="flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+                >
+                  {item.icon && <item.icon className="w-5 h-5 mr-3" />}
+                  {item.name}
+                </Link>
+              )
             ))}
           </nav>
           <div className="p-4 border-t">
@@ -67,7 +123,7 @@ export default function DashboardLayout({
               onClick={handleSignOut}
               className="flex items-center w-full px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
             >
-              <ArrowLeftOnRectangleIcon className="w-5 h-5 mr-3" />
+              <SignOutIcon className="w-5 h-5 mr-3" />
               Sign Out
             </button>
           </div>
@@ -76,7 +132,7 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <div className="pl-64">
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main className="max-w mx-auto py-6 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>

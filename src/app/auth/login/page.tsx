@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const router = useRouter()
   const supabase = createClientComponentClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,9 +26,10 @@ export default function LoginPage() {
       if (error) throw error
 
       toast.success('Login successful')
-      window.location.href = '/dashboard'
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to login')
+      router.push('/dashboard')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to login'
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -47,10 +50,10 @@ export default function LoginPage() {
             />
           </div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            Welcome Back
+          Sign in 
           </h1>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your admin dashboard
+             to your admin dashboard
           </p>
         </div>
 

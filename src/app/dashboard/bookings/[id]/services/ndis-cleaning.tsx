@@ -1,4 +1,4 @@
-type NDISCleaningService = {
+export type NDISCleaningService = {
   id: string
   booking_id: string
   home_size: string

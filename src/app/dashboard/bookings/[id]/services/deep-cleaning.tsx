@@ -1,4 +1,4 @@
-type DeepCleaningService = {
+export type DeepCleaningService = {
   id: string
   booking_id: string
   home_size: string

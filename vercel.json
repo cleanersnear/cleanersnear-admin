@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["syd1"],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://mxnzjvvbdmujzvhprclj.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14bnpqdnZiZG11anp2aHByY2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcxMDQwMTYsImV4cCI6MjA1MjY4MDAxNn0.v7Vqj3NyB0zmoWOWmtL9If2Mu53oyepKsxJcaSR8ejc",
+    "NEXT_PUBLIC_FRONTEND_URL": "https://www.cleaningprofessionals.com.au/",
+    "NEXT_PUBLIC_ADMIN_URL": "https://admin.cleaningprofessionals.com.au/"
+  }
+} 
