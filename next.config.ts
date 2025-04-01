@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  distDir: '.next',
   async headers() {
     return [
       {
@@ -8,11 +10,11 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' https://admin.cleaningprofessionals.com.au https://*.supabase.co"
+            value: "frame-ancestors 'self' https://admin.cleaningprofessionals.com.au https://*.supabase.co; connect-src 'self' https://*.supabase.co https://admin.cleaningprofessionals.com.au https://mxnzjvvbdmujzvhprclj.supabase.co"
           },
           {
             key: "Access-Control-Allow-Origin",
-            value: "https://admin.cleaningprofessionals.com.au"
+            value: "*"
           },
           {
             key: "Access-Control-Allow-Methods",
@@ -21,6 +23,22 @@ const nextConfig: NextConfig = {
           {
             key: "Access-Control-Allow-Headers",
             value: "X-Requested-With, Content-Type, Authorization"
+          },
+          {
+            key: "Access-Control-Allow-Credentials",
+            value: "true"
+          },
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, proxy-revalidate"
+          },
+          {
+            key: "Pragma",
+            value: "no-cache"
+          },
+          {
+            key: "Expires",
+            value: "0"
           }
         ]
       }
@@ -31,6 +49,15 @@ const nextConfig: NextConfig = {
       {
         source: "/auth/:path*",
         destination: "/auth/:path*"
+      }
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: '/auth/signout',
+        destination: '/auth/login',
+        permanent: false
       }
     ];
   }
