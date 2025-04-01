@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
 
+// Log environment variables during build (ONLY public ones!)
+console.log('Building with environment:', {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'not set',
+  NODE_ENV: process.env.NODE_ENV
+});
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   distDir: '.next',
