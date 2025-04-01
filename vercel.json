@@ -17,7 +17,19 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://admin.cleaningprofessionals.com.au"
+          "value": "frame-ancestors 'self' https://admin.cleaningprofessionals.com.au https://*.supabase.co"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://admin.cleaningprofessionals.com.au"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-Requested-With, Content-Type, Authorization"
         }
       ]
     }
@@ -26,6 +38,19 @@
     {
       "source": "/auth/:path*",
       "destination": "/auth/:path*"
+    },
+    {
+      "source": "/site.webmanifest",
+      "destination": "/site.webmanifest"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/site.webmanifest",
+      "dest": "/site.webmanifest",
+      "headers": {
+        "Cache-Control": "public, max-age=3600"
+      }
     }
   ]
 } 
