@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: "https://mxnzjvvbdmujzvhprclj.supabase.co"
+            value: process.env.NEXT_PUBLIC_SUPABASE_URL || "*"
           },
           {
             key: "Access-Control-Allow-Methods",
@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Access-Control-Allow-Headers",
-            value: "Content-Type, Authorization, X-Client-Info, X-Supabase-Api-Version, apikey"
+            value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, X-Client-Info, X-Supabase-Api-Version, apikey"
           },
           {
             key: "Access-Control-Allow-Credentials",
@@ -29,10 +29,11 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     return [
       {
         source: '/auth/:path*',
-        destination: 'https://mxnzjvvbdmujzvhprclj.supabase.co/auth/:path*'
+        destination: `${supabaseUrl}/auth/:path*`
       }
     ];
   },
