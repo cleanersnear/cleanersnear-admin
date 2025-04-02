@@ -120,22 +120,24 @@ export default function DashboardPage() {
   ).length
 
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
     </div>
   )
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Current Date/Time and Notifications Section */}
       <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <NotificationComponent />
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
+            <div className="hidden lg:block">
+              <NotificationComponent />
+            </div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-medium text-gray-900">
+            <div className="text-base sm:text-lg font-medium text-gray-900">
               {format(currentDateTime, 'EEEE, MMMM d, yyyy')}
             </div>
             <div className="text-sm text-gray-500">
@@ -145,26 +147,26 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Booking Numbers Section - Now showing customer counts */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Yesterday</h3>
+      {/* Booking Numbers Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Yesterday</h3>
           <div className="flex items-baseline">
-            <span className="text-3xl font-bold text-gray-900">{bookingCounts.yesterday}</span>
+            <span className="text-2xl sm:text-3xl font-bold text-gray-900">{bookingCounts.yesterday}</span>
             <span className="ml-2 text-sm text-gray-500">bookings</span>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Today</h3>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Today</h3>
           <div className="flex items-baseline">
-            <span className="text-3xl font-bold text-blue-600">{bookingCounts.today}</span>
+            <span className="text-2xl sm:text-3xl font-bold text-blue-600">{bookingCounts.today}</span>
             <span className="ml-2 text-sm text-gray-500">bookings</span>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Tomorrow</h3>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Tomorrow</h3>
           <div className="flex items-baseline">
-            <span className="text-3xl font-bold text-gray-900">{bookingCounts.tomorrow}</span>
+            <span className="text-2xl sm:text-3xl font-bold text-gray-900">{bookingCounts.tomorrow}</span>
             <span className="ml-2 text-sm text-gray-500">bookings</span>
           </div>
         </div>
@@ -172,20 +174,20 @@ export default function DashboardPage() {
 
       {/* Actions Needed Section */}
       <div className="bg-white rounded-lg shadow">
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Actions Needed</h2>
-          <div className="grid grid-cols-2 gap-6">
+        <div className="p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Actions Needed</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="border rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-500">Unfulfilled Bookings</h3>
               <div className="mt-2 flex items-baseline">
-                <span className="text-2xl font-bold text-orange-600">{unfulfilledBookings}</span>
+                <span className="text-xl sm:text-2xl font-bold text-orange-600">{unfulfilledBookings}</span>
                 <span className="ml-2 text-sm text-gray-500">need attention</span>
               </div>
             </div>
             <div className="border rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-500">Unpaid/Partial Payments</h3>
               <div className="mt-2 flex items-baseline">
-                <span className="text-2xl font-bold text-red-600">{unpaidBookings}</span>
+                <span className="text-xl sm:text-2xl font-bold text-red-600">{unpaidBookings}</span>
                 <span className="ml-2 text-sm text-gray-500">need collection</span>
               </div>
             </div>

@@ -435,10 +435,10 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 sm:px-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
             className="p-2 hover:bg-gray-100 rounded-full"
@@ -446,7 +446,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold">Booking Details</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Booking Details</h1>
             <p className="text-sm text-gray-600">#{booking.booking_number}</p>
           </div>
         </div>
@@ -457,50 +457,50 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* Left Column (2/3 width) */}
-        <div className="col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column (Full width on mobile, 2/3 on desktop) */}
+        <div className="lg:col-span-2 space-y-6">
           {/* Booking Information */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <h2 className="text-lg font-medium mb-4">Booking Information</h2>
-<dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-  <div>
-    <dt className="text-sm font-medium text-gray-500">Service Type</dt>
-    <dd className="mt-1 text-sm text-gray-900">{booking.service_type}</dd>
-  </div>
-  <div>
-    <dt className="text-sm font-medium text-gray-500">Date</dt>
-    <dd className="mt-1 text-sm text-gray-900">
-      {formatDate(booking.customer.scheduling?.date)}
-    </dd>
-  </div>
-  <div>
-    <dt className="text-sm font-medium text-gray-500">Time</dt>
-    <dd className="mt-1 text-sm text-gray-900">
-      {formatTime(booking.customer.scheduling?.time)}
-    </dd>
-  </div>
-  <div>
-    <dt className="text-sm font-medium text-gray-500">Total Price</dt>
-    <dd className="mt-1 text-sm text-gray-900">${booking.total_price}</dd>
-  </div>
-  <div>
-    <dt className="text-sm font-medium text-gray-500">Flexible Date</dt>
-    <dd className="mt-1 text-sm text-gray-900">
-      {booking.customer.scheduling?.is_flexible_date ? 'Yes' : 'No'}
-    </dd>
-  </div>
-  <div>
-    <dt className="text-sm font-medium text-gray-500">Flexible Time</dt>
-    <dd className="mt-1 text-sm text-gray-900">
-      {booking.customer.scheduling?.is_flexible_time ? 'Yes' : 'No'}
-    </dd>
-  </div>
-</dl>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Service Type</dt>
+                <dd className="mt-1 text-sm text-gray-900">{booking.service_type}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Date</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {formatDate(booking.customer.scheduling?.date)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Time</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {formatTime(booking.customer.scheduling?.time)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Total Price</dt>
+                <dd className="mt-1 text-sm text-gray-900">${booking.total_price}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Flexible Date</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {booking.customer.scheduling?.is_flexible_date ? 'Yes' : 'No'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Flexible Time</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {booking.customer.scheduling?.is_flexible_time ? 'Yes' : 'No'}
+                </dd>
+              </div>
+            </dl>
           </div>
 
           {/* Service Details Section */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <h2 className="text-lg font-medium mb-4">Service Details</h2>
             {booking && (
               <ServiceDetails
@@ -511,11 +511,11 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
           </div>
         </div>
 
-        {/* Right Column (1/3 width) */}
+        {/* Right Column (Full width on mobile, 1/3 on desktop) */}
         <div className="space-y-6">
-          {/* Customer Information - Adding back */}
+          {/* Customer Information */}
           <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Customer Information</h3>
               <dl className="space-y-4">
                 <div>
@@ -552,7 +552,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
 
           {/* Payment Section */}
           <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Payment</h3>
               <PaymentSection
                 bookingId={id}
@@ -605,8 +605,8 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
 
           {/* Fulfillment Actions */}
           <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
+            <div className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Fulfillment</h3>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusConfig(booking.status as BookingStatus).color}`}>
                   {getStatusConfig(booking.status as BookingStatus).label}
@@ -655,11 +655,11 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
                 </div>
 
                 {/* Status Dropdown */}
-                <div className="flex items-center space-x-2 pt-2 border-t">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 pt-2 border-t">
                   <select
                     value={booking.status}
                     onChange={(e) => updateBookingStatus(e.target.value as BookingStatus)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     disabled={isLoading}
                   >
                     <option value="new">New Booking</option>
@@ -674,7 +674,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
                   {booking.status !== 'cancelled' && (
                     <button
                       onClick={() => updateBookingStatus('cancelled')}
-                      className="px-3 py-2 text-sm border border-red-300 text-red-700 rounded-md hover:bg-red-50 disabled:opacity-50"
+                      className="w-full sm:w-auto px-3 py-2 text-sm border border-red-300 text-red-700 rounded-md hover:bg-red-50 disabled:opacity-50"
                       disabled={isLoading}
                     >
                       Cancel
@@ -686,7 +686,6 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
                 <div className="mt-4 pt-4 border-t">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Status History</h4>
                   <div className="space-y-2">
-                    {/* We can add status history here if you want to track status changes */}
                     <div className="flex items-center text-sm text-gray-500">
                       <span className="w-4 h-4 rounded-full bg-gray-200 mr-2"></span>
                       Current: {getStatusConfig(booking.status as BookingStatus).label}
@@ -699,7 +698,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
 
           {/* Staff Assignment */}
           <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Staff</h3>
               <div className="space-y-4">
                 {/* Current Assignments */}
@@ -769,7 +768,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
 
           {/* Notes Section */}
           <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Notes</h3>
               <NotesSection
                 bookingId={id}

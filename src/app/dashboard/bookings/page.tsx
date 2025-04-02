@@ -191,16 +191,16 @@ export default function BookingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="px-6">
-        <div className="flex justify-between items-center">
+      <div className="px-4 sm:px-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Bookings</h1>
             <p className="text-sm text-gray-600">Manage your service bookings</p>
           </div>
         </div>
       </div>
 
-      <div className="px-6">
+      <div className="px-4 sm:px-6">
         <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -222,7 +222,7 @@ export default function BookingsPage() {
               )}
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -282,38 +282,38 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      <div className="px-6">
-        <div className="bg-white shadow-sm rounded-lg">
+      <div className="px-4 sm:px-6">
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <div className="min-w-[1400px]">
               <table className="w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Booking Number
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Customer
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Service Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Location
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Schedule
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Price
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Payment
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Staff
                     </th>
                   </tr>
@@ -325,10 +325,10 @@ export default function BookingsPage() {
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={() => router.push(`/dashboard/bookings/${booking.id}`)}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {booking.booking_number}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {booking.customer ? (
                           <div className="flex flex-col">
                             <span>{`${booking.customer.first_name} ${booking.customer.last_name}`}</span>
@@ -338,10 +338,10 @@ export default function BookingsPage() {
                           'No customer data'
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {booking.service_type}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex flex-col">
                           <span>{booking.location?.suburb || 'N/A'}</span>
                           <span className="text-xs text-gray-400">
@@ -349,7 +349,7 @@ export default function BookingsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex flex-col">
                           <span>
                             {booking.customer?.scheduling?.date ? 
@@ -363,15 +363,15 @@ export default function BookingsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         ${booking.total_price}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(booking.status)}`}>
                           {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex flex-col">
                           <span className={`text-xs font-medium ${
                             booking.admin_details?.payment_status === 'paid' ? 'text-green-600' :
@@ -393,7 +393,7 @@ export default function BookingsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex flex-col">
                           {booking.admin_details?.staff_assigned && 
                            booking.admin_details.staff_assigned.length > 0 ? (
@@ -415,8 +415,8 @@ export default function BookingsPage() {
           </div>
 
           {/* Pagination Controls */}
-          <div className="px-6 py-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-sm text-gray-500">
                 Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredBookings.length)} of {filteredBookings.length} results
               </div>

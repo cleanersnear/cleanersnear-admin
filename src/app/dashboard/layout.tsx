@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Link from 'next/link'
@@ -18,7 +18,10 @@ import {
   ChatBubbleLeftRightIcon,
   ArrowLeftStartOnRectangleIcon as SignOutIcon,
   DocumentTextIcon,
+  Bars3Icon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
+import NotificationComponent from './notification/notification'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
@@ -56,6 +59,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const supabase = createClientComponentClient()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -84,13 +88,41 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Mobile menu button */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b">
+        <div className="flex items-center justify-between h-16 px-4">
+          <h1 className="text-xl font-bold">Admin Panel</h1>
+          <div className="flex items-center gap-4">
+            <div className="lg:hidden">
+              <NotificationComponent />
+            </div>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 text-gray-600 hover:text-gray-900"
+            >
+              {isMobileMenuOpen ? (
+                <XMarkIcon className="w-6 h-6" />
+              ) : (
+                <Bars3Icon className="w-6 h-6" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-white border-r">
+      <div className={`
+        fixed inset-y-0 left-0 w-64 bg-white border-r
+        transform transition-transform duration-200 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0 lg:static lg:fixed
+        z-40
+      `}>
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-center h-16 px-4 border-b">
+          <div className="hidden lg:flex items-center justify-center h-16 px-4 border-b">
             <h1 className="text-xl font-bold">Admin Panel</h1>
           </div>
-          <nav className="flex-1 px-2 py-4 space-y-1">
+          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto mt-16 lg:mt-0">
             {navigation.map((item) => (
               item.children ? (
                 <div key={item.name} className="space-y-1">
@@ -98,8 +130,9 @@ export default function DashboardLayout({
                   {item.children.map((child) => (
                     <Link
                       key={child.name}
-                      href={child.href}
+                      href={child.href || '#'}
                       className="flex items-center pl-4 px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       {child.icon && <child.icon className="w-5 h-5 mr-3" />}
                       {child.name}
@@ -111,6 +144,7 @@ export default function DashboardLayout({
                   key={item.name}
                   href={item.href || '#'}
                   className="flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.icon && <item.icon className="w-5 h-5 mr-3" />}
                   {item.name}
@@ -131,11 +165,19 @@ export default function DashboardLayout({
       </div>
 
       {/* Main Content */}
-      <div className="pl-64">
-        <main className="max-w mx-auto py-6 sm:px-6 lg:px-8">
+      <div className="lg:ml-64">
+        <main className="max-w mx-auto py-6 sm:px-6 lg:px-8 mt-16 lg:mt-0">
           {children}
         </main>
       </div>
+
+      {/* Overlay for mobile menu */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
     </div>
   )
 } 

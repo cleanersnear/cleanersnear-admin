@@ -124,9 +124,9 @@ export default function NotificationComponent() {
                 onClick={() => setIsOpen(!isOpen)}
                 className="relative p-2 text-gray-600 hover:text-gray-800 focus:outline-none"
             >
-                <Bell className="w-6 h-6" />
+                <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
                 {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center min-w-[18px] h-4 sm:min-w-[20px] sm:h-5 px-1.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
                         {formattedUnreadCount}
                     </span>
                 )}
@@ -134,11 +134,25 @@ export default function NotificationComponent() {
 
             {/* Notification Panel */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50">
-                    <div className="p-4 border-b">
-                        <h3 className="text-lg font-semibold">Notifications</h3>
+                <div className={`
+                    fixed sm:absolute top-16 sm:top-full right-0 sm:right-0 mt-0 sm:mt-2 
+                    w-full sm:w-96 bg-white rounded-none sm:rounded-lg shadow-xl z-50
+                    ${isOpen ? 'block' : 'hidden'}
+                `}>
+                    <div className="p-3 sm:p-4 border-b">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-base sm:text-lg font-semibold">Notifications</h3>
+                            <button 
+                                onClick={() => setIsOpen(false)}
+                                className="sm:hidden text-gray-500 hover:text-gray-700"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                    <div className="max-h-96 overflow-y-auto">
+                    <div className="max-h-[calc(100vh-16rem)] sm:max-h-96 overflow-y-auto">
                         {notifications.length === 0 ? (
                             <div className="p-4 text-center text-gray-500">
                                 No notifications
@@ -147,20 +161,20 @@ export default function NotificationComponent() {
                             notifications.map((notification) => (
                                 <div 
                                     key={notification.id}
-                                    className={`p-4 border-b hover:bg-gray-50 cursor-pointer
+                                    className={`p-3 sm:p-4 border-b hover:bg-gray-50 cursor-pointer
                                         ${notification.status === 'unread' ? 'bg-blue-50' : ''}`}
                                     onClick={() => handleNotificationClick(notification)}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-medium">{notification.title}</h4>
+                                        <h4 className="text-sm sm:text-base font-medium">{notification.title}</h4>
                                         <span className="text-xs text-gray-500">
                                             {new Date(notification.created_at).toLocaleString()}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-600 mt-1">
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                                         {notification.content}
                                     </p>
-                                    <div className="mt-2 flex justify-between items-end">
+                                    <div className="mt-2 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
                                         <div className="text-xs text-gray-500">
                                             <p>Service: {notification.metadata.serviceType}</p>
                                             <p>Date: {notification.metadata.scheduledDate}</p>
@@ -171,7 +185,7 @@ export default function NotificationComponent() {
                                                 onClick={(e) => handleMarkAsRead(e, notification)}
                                                 className="text-xs text-blue-600 hover:text-blue-800 
                                                     bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded
-                                                    transition-colors duration-200"
+                                                    transition-colors duration-200 w-full sm:w-auto"
                                             >
                                                 Mark as read
                                             </button>
