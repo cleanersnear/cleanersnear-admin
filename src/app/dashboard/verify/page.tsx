@@ -20,7 +20,7 @@ export default function VerifyConnection() {
         const supabase = createClientComponentClient()
         
         // Try to make a simple query
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('bookings')
           .select('count')
           .limit(1)
