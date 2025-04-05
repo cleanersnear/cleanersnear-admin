@@ -80,10 +80,22 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
     } finally {
       setIsLoading(false);
     }
-  }, [resolvedParams.id, updateFormData]);
+  }, [resolvedParams.id]);
 
   useEffect(() => {
-    loadBlogData();
+    let mounted = true;
+
+    const loadData = async () => {
+      if (mounted) {
+        await loadBlogData();
+      }
+    };
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
   }, [loadBlogData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
