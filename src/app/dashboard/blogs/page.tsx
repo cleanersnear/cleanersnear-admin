@@ -69,6 +69,13 @@ export default function BlogsPage() {
   const liveUrl = (slug: string) => `${domain}/blogs/${slug}`;
   const previewUrl = (slug: string) => `${domain}/blogs/${slug}`;
 
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return '/images/placeholder.jpg';
+    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('//')) return `https:${imagePath}`;
+    return `${domain}${imagePath}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -119,15 +126,17 @@ export default function BlogsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {blogs.map((blog) => (
+            {blogs.map((blog, index) => (
               <div key={blog.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="relative h-48">
                   <Image
-                    src={blog.cover_image.startsWith('http') ? blog.cover_image : `${domain}${blog.cover_image}`}
+                    src={getImageUrl(blog.cover_image)}
                     alt={blog.title}
                     fill
                     className="object-cover"
                     unoptimized={blog.cover_image.startsWith('http')}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority={index < 3}
                   />
                 </div>
                 
