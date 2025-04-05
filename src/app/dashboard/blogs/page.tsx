@@ -132,7 +132,7 @@ export default function BlogsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {blogs.map((blog, index) => (
+            {blogs.map((blog) => (
               <div key={blog.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="relative h-48">
                   <div className="absolute inset-0 bg-gray-100" />
