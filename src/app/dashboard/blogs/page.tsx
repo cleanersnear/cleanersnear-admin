@@ -70,10 +70,31 @@ export default function BlogsPage() {
   const previewUrl = (slug: string) => `${domain}/blogs/${slug}`;
 
   const getImageUrl = (imagePath: string) => {
-    if (!imagePath) return '/images/placeholder.jpg';
-    if (imagePath.startsWith('http')) return imagePath;
-    if (imagePath.startsWith('//')) return `https:${imagePath}`;
-    return `${domain}${imagePath}`;
+    try {
+      if (!imagePath) return '/images/placeholder.jpg';
+      
+      // Remove any double slashes (except after protocol)
+      let cleanPath = imagePath.replace(/([^:]\/)\/+/g, '$1');
+      
+      // If it's already a full URL, return it
+      if (cleanPath.startsWith('http')) {
+        return cleanPath;
+      }
+      
+      // If it starts with //, add https:
+      if (cleanPath.startsWith('//')) {
+        return `https:${cleanPath}`;
+      }
+      
+      // Ensure path starts with a single /
+      cleanPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+      
+      // Return full URL
+      return `${domain}${cleanPath}`;
+    } catch (error) {
+      console.error('Error processing image URL:', error);
+      return '/images/placeholder.jpg';
+    }
   };
 
   if (isLoading) {
@@ -129,12 +150,16 @@ export default function BlogsPage() {
             {blogs.map((blog, index) => (
               <div key={blog.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="relative h-48">
+                  <div className="absolute inset-0 bg-gray-100" />
                   <Image
                     src={getImageUrl(blog.cover_image)}
                     alt={blog.title}
                     fill
                     className="object-cover"
-                    unoptimized={blog.cover_image.startsWith('http')}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/images/placeholder.jpg';
+                    }}
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     priority={index < 3}
                   />
