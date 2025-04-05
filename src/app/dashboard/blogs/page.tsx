@@ -70,31 +70,16 @@ export default function BlogsPage() {
   const previewUrl = (slug: string) => `${domain}/blogs/${slug}`;
 
   const getImageUrl = (imagePath: string) => {
-    try {
-      if (!imagePath) return '/images/placeholder.jpg';
-      
-      // Remove any double slashes (except after protocol)
-      let cleanPath = imagePath.replace(/([^:]\/)\/+/g, '$1');
-      
-      // If it's already a full URL, return it
-      if (cleanPath.startsWith('http')) {
-        return cleanPath;
-      }
-      
-      // If it starts with //, add https:
-      if (cleanPath.startsWith('//')) {
-        return `https:${cleanPath}`;
-      }
-      
-      // Ensure path starts with a single /
-      cleanPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
-      
-      // Return full URL
-      return `${domain}${cleanPath}`;
-    } catch (error) {
-      console.error('Error processing image URL:', error);
-      return '/images/placeholder.jpg';
+    if (!imagePath) return '/images/placeholder.jpg';
+    
+    // If it's already a full URL with our domain, use it as is
+    if (imagePath.startsWith(domain)) {
+      return imagePath;
     }
+    
+    // For relative paths, ensure they start with a single slash
+    const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${domain}${cleanPath}`;
   };
 
   if (isLoading) {
@@ -160,8 +145,7 @@ export default function BlogsPage() {
                       const target = e.target as HTMLImageElement;
                       target.src = '/images/placeholder.jpg';
                     }}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    priority={index < 3}
+                    unoptimized
                   />
                 </div>
                 
