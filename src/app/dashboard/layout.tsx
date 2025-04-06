@@ -20,6 +20,9 @@ import {
   DocumentTextIcon,
   Bars3Icon,
   XMarkIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  FolderIcon,
 } from '@heroicons/react/24/outline'
 import NotificationComponent from './notification/notification'
 
@@ -40,6 +43,7 @@ const navigation = [
     children: [
       { name: 'Careers', href: '/dashboard/careers', icon: BriefcaseIcon },
       { name: 'Blog Posts', href: '/dashboard/blogs', icon: NewspaperIcon },
+      { name: 'Files', href: '/dashboard/files', icon: FolderIcon },
       { name: "FAQ's", href: '/dashboard/faqs', icon: QuestionMarkCircleIcon },
     ]
   },
@@ -60,6 +64,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const supabase = createClientComponentClient()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -112,30 +117,46 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 w-64 bg-white border-r
-        transform transition-transform duration-200 ease-in-out
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:fixed
+        fixed inset-y-0 left-0 bg-white border-r
+        transform transition-all duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isSidebarCollapsed ? 'w-20' : 'w-64'}
         z-40
       `}>
         <div className="flex flex-col h-full">
-          <div className="hidden lg:flex items-center justify-center h-16 px-4 border-b">
-            <h1 className="text-xl font-bold">Admin Panel</h1>
+          <div className="hidden lg:flex items-center justify-between h-16 px-4 border-b">
+            <h1 className={`text-xl font-bold transition-opacity duration-300 ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+              Admin Panel
+            </h1>
+            <button
+              onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+              className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md hidden lg:block transition-colors"
+            >
+              {isSidebarCollapsed ? (
+                <ArrowRightIcon className="w-5 h-5" />
+              ) : (
+                <ArrowLeftIcon className="w-5 h-5" />
+              )}
+            </button>
           </div>
           <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto mt-16 lg:mt-0">
             {navigation.map((item) => (
               item.children ? (
                 <div key={item.name} className="space-y-1">
-                  <p className="px-2 py-2 text-sm font-medium text-gray-900">{item.name}</p>
+                  <p className={`px-2 py-2 text-sm font-medium text-gray-900 ${isSidebarCollapsed ? 'text-center' : ''}`}>
+                    {!isSidebarCollapsed && item.name}
+                  </p>
                   {item.children.map((child) => (
                     <Link
                       key={child.name}
                       href={child.href || '#'}
-                      className="flex items-center pl-4 px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+                      className={`flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900
+                        ${isSidebarCollapsed ? 'justify-center' : 'pl-4'}`}
                       onClick={() => setIsMobileMenuOpen(false)}
+                      title={isSidebarCollapsed ? child.name : ''}
                     >
-                      {child.icon && <child.icon className="w-5 h-5 mr-3" />}
-                      {child.name}
+                      {child.icon && <child.icon className={`w-5 h-5 ${isSidebarCollapsed ? '' : 'mr-3'}`} />}
+                      {!isSidebarCollapsed && child.name}
                     </Link>
                   ))}
                 </div>
@@ -143,11 +164,13 @@ export default function DashboardLayout({
                 <Link
                   key={item.name}
                   href={item.href || '#'}
-                  className="flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+                  className={`flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900
+                    ${isSidebarCollapsed ? 'justify-center' : ''}`}
                   onClick={() => setIsMobileMenuOpen(false)}
+                  title={isSidebarCollapsed ? item.name : ''}
                 >
-                  {item.icon && <item.icon className="w-5 h-5 mr-3" />}
-                  {item.name}
+                  {item.icon && <item.icon className={`w-5 h-5 ${isSidebarCollapsed ? '' : 'mr-3'}`} />}
+                  {!isSidebarCollapsed && item.name}
                 </Link>
               )
             ))}
@@ -155,17 +178,22 @@ export default function DashboardLayout({
           <div className="p-4 border-t">
             <button
               onClick={handleSignOut}
-              className="flex items-center w-full px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+              className={`flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900
+                ${isSidebarCollapsed ? 'justify-center w-full' : ''}`}
+              title={isSidebarCollapsed ? 'Sign Out' : ''}
             >
-              <SignOutIcon className="w-5 h-5 mr-3" />
-              Sign Out
+              <SignOutIcon className={`w-5 h-5 ${isSidebarCollapsed ? '' : 'mr-3'}`} />
+              {!isSidebarCollapsed && 'Sign Out'}
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="lg:ml-64">
+      <div className={`
+        transition-all duration-300 ease-in-out
+        ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
+      `}>
         <main className="max-w mx-auto py-6 sm:px-6 lg:px-8 mt-16 lg:mt-0">
           {children}
         </main>
