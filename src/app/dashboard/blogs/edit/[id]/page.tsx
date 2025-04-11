@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TrashIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -30,6 +30,12 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
     contentIndex: number;
     field: 'content' | 'introduction';
   } | null>(null);
+  const updateFormDataRef = useRef(updateFormData);
+
+  // Update the ref when updateFormData changes
+  useEffect(() => {
+    updateFormDataRef.current = updateFormData;
+  }, [updateFormData]);
 
   const loadBlogData = useCallback(async () => {
     try {
@@ -80,7 +86,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
         faqs: metadataData.faqs || []
       };
 
-      updateFormData(formattedData);
+      updateFormDataRef.current(formattedData);
     } catch (error) {
       console.error('Error loading blog:', error);
       toast.error('Failed to load blog data');
@@ -669,19 +675,44 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                               Insert Link
                             </button>
                           </div>
-                          <textarea
-                            value={content}
-                            onChange={(e) => {
-                              const updatedSections = [...formData.sections];
-                              updatedSections[sectionIndex].content[contentIndex] = e.target.value;
-                              updateFormData({ ...formData, sections: updatedSections });
-                            }}
-                            className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:ring-blue-500"
-                            rows={4}
-                            required
-                          />
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <textarea
+                                value={content}
+                                onChange={(e) => {
+                                  const newContent = [...section.content];
+                                  newContent[contentIndex] = e.target.value;
+                                  updateSection(sectionIndex, 'content', newContent);
+                                }}
+                                className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500 min-h-[100px] resize-y"
+                                placeholder="Write your section content here..."
+                                rows={3}
+                                required
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newContent = section.content.filter((_, i) => i !== contentIndex);
+                                updateSection(sectionIndex, 'content', newContent);
+                              }}
+                              className="text-red-600 hover:text-red-700 self-start mt-2"
+                            >
+                              <TrashIcon className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
                       ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateSection(sectionIndex, 'content', [...section.content, '']);
+                        }}
+                        className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        <PlusCircleIcon className="w-4 h-4 mr-1" />
+                        Add Paragraph
+                      </button>
                       
                       {/* Highlights Section */}
                       <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
