@@ -5,6 +5,7 @@ import { TrashIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import BlogImage from '../components/BlogImage';
+import LinkDialog from '../components/LinkDialog';
 
 import { blogService } from '../services/blogService';
 import { useBlogForm } from '../hooks/useBlogForm';
@@ -21,6 +22,12 @@ export default function NewBlogPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { formData, updateFormData, clearDraft } = useBlogForm();
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [activeTextArea, setActiveTextArea] = useState<{
+    sectionIndex: number;
+    contentIndex: number;
+    field: 'content' | 'introduction';
+  } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -78,46 +85,102 @@ export default function NewBlogPage() {
   const loadSampleBlog = () => {
     const currentDate = new Date().toISOString().split('T')[0];
     const sampleData = {
-      slug: '10-essential-house-cleaning-tips',
-      title: '10 Essential House Cleaning Tips for a Spotless Home',
-      excerpt: 'Discover professional house cleaning tips that will transform your home. Learn time-saving techniques and get expert advice for maintaining a clean, healthy living space.',
-      category: 'House Cleaning',
-      read_time: '5 min read',
+      slug: 'cleaning-services-melbourne',
+      title: 'Professional Cleaning Services in Melbourne: A Complete Guide',
+      excerpt: 'Discover the best professional cleaning services in Melbourne. Learn about different cleaning options, pricing, and how to choose the right service for your needs.',
+      category: 'Cleaning Services',
+      read_time: '8 min read',
       author_name: 'Sarah Johnson',
-      author_role: 'Senior Cleaning Expert',
+      author_role: 'Cleaning Expert',
       author_image: '/images/blogimages/authors/sarah-johnson.jpg',
       publish_date: currentDate,
       last_updated: currentDate,
       likes: 0,
-      cover_image: '/images/blogimages/latest/house-cleaning-tips.jpg',
+      cover_image: '/images/blogimages/latest/cleaning-services-melbourne.jpg',
       is_featured: true,
-      introduction: 'Maintaining a clean home doesn\'t have to be overwhelming. With the right techniques and a systematic approach, you can keep your living space spotless while saving time and energy. In this guide, we\'ll share professional cleaning tips that will help you establish an effective cleaning routine.',
+      introduction: 'Finding reliable cleaning services in Melbourne can be challenging. With so many options available, it\'s important to understand what different services offer and how to choose the right one for your needs. In this comprehensive guide, we\'ll explore the various cleaning services available in Melbourne, from residential cleaning to commercial cleaning, and help you make an informed decision.',
       sections: [
         {
-          id: 'daily-cleaning-routine',
-          title: 'Establish a Daily Cleaning Routine',
+          id: 'types-of-cleaning-services',
+          title: 'Types of Cleaning Services in Melbourne',
           content: [
-            'The key to maintaining a clean home is developing consistent daily habits. Start with simple tasks like making your bed, doing a quick bathroom wipe-down, and cleaning dishes after meals.',
-            'Spend just 15-20 minutes each day on basic tidying. This prevents clutter from accumulating and makes deep cleaning sessions much more manageable.'
+            'Melbourne offers a wide range of professional cleaning services to meet different needs. Whether you\'re looking for regular house cleaning, deep cleaning, or specialized services, there\'s a provider for you.',
+            'Residential cleaning services focus on homes and apartments, offering regular maintenance cleaning, deep cleaning, and specialized services like end-of-lease cleaning.',
+            'Commercial cleaning services cater to businesses, offices, and retail spaces, providing tailored solutions to maintain a professional environment.'
           ],
-          highlights: [{
-            title: 'Daily Cleaning Checklist',
-            items: [
-              '✓ Make beds in the morning',
-              '✓ Wipe bathroom surfaces after use',
-              '✓ Clean kitchen counters after meals',
-              '✓ Quick floor sweep or vacuum'
-            ]
-          }]
+          highlights: [
+            {
+              title: 'Popular Cleaning Services',
+              items: [
+                'Regular house cleaning',
+                'Deep cleaning',
+                'End-of-lease cleaning',
+                'Commercial cleaning',
+                'Carpet and upholstery cleaning'
+              ]
+            }
+          ]
+        },
+        {
+          id: 'choosing-the-right-service',
+          title: 'How to Choose the Right Cleaning Service',
+          content: [
+            'When selecting a cleaning service, consider your specific needs, budget, and schedule. Some services offer flexible scheduling, while others specialize in one-time deep cleans.',
+            'For regular home maintenance, look for a service that offers customizable cleaning plans. For businesses, consider a provider with experience in your industry.',
+            'Check reviews and ask for references to ensure you\'re choosing a reputable company. Many Melbourne cleaning services offer free quotes, so take advantage of this to compare options.'
+          ],
+          highlights: [
+            {
+              title: 'Questions to Ask Before Hiring',
+              items: [
+                'What services are included in the standard package?',
+                'Do you provide your own cleaning supplies and equipment?',
+                'Are your cleaners insured and background-checked?',
+                'What is your cancellation policy?',
+                'Do you offer a satisfaction guarantee?'
+              ]
+            }
+          ]
+        },
+        {
+          id: 'cost-of-cleaning-services',
+          title: 'Understanding Cleaning Service Costs',
+          content: [
+            'The cost of cleaning services in Melbourne varies based on several factors, including the type of service, size of the space, and frequency of cleaning.',
+            'Most cleaning companies charge by the hour, with rates typically ranging from $30 to $50 per hour per cleaner. Some services offer fixed-rate packages for specific cleaning tasks.',
+            'For regular cleaning services, many providers offer discounted rates for weekly or bi-weekly schedules. It\'s worth comparing different pricing structures to find the best value for your needs.'
+          ],
+          highlights: [
+            {
+              title: 'Factors Affecting Cleaning Costs',
+              items: [
+                'Size of the space',
+                'Type of cleaning required',
+                'Frequency of service',
+                'Number of cleaners needed',
+                'Special requirements or equipment'
+              ]
+            }
+          ]
         }
       ],
       table_of_contents: [
-        { id: 'daily-cleaning-routine', title: 'Establish a Daily Cleaning Routine' }
+        { id: 'types-of-cleaning-services', title: 'Types of Cleaning Services in Melbourne' },
+        { id: 'choosing-the-right-service', title: 'How to Choose the Right Cleaning Service' },
+        { id: 'cost-of-cleaning-services', title: 'Understanding Cleaning Service Costs' }
       ],
       faqs: [
         {
-          question: 'How often should I deep clean my home?',
-          answer: 'For most homes, a deep cleaning every 2-4 weeks is recommended, depending on factors like household size, presence of pets, and daily activities. However, maintaining daily cleaning habits can reduce the frequency of deep cleaning needed.'
+          question: 'How often should I schedule professional cleaning?',
+          answer: 'The frequency depends on your needs and lifestyle. For most homes, a professional cleaning every 2-4 weeks is sufficient. Busy households or those with pets might benefit from weekly cleaning. For businesses, daily or weekly cleaning is common depending on the type of business.'
+        },
+        {
+          question: 'What should I look for in a cleaning service?',
+          answer: 'Look for a service with good reviews, proper insurance, and clear pricing. Ask about their cleaning products and methods, especially if you have specific preferences or allergies. A reputable service should be willing to provide references and have a satisfaction guarantee.'
+        },
+        {
+          question: 'Do I need to provide cleaning supplies?',
+          answer: 'Most professional cleaning services bring their own supplies and equipment. However, it\'s always good to confirm this before booking. If you have specific products you prefer, discuss this with the service provider.'
         }
       ]
     };
@@ -266,6 +329,26 @@ export default function NewBlogPage() {
     clearDraft();
   };
 
+  const handleInsertLink = (linkText: string, linkUrl: string) => {
+    if (!activeTextArea) return;
+
+    const linkSyntax = `{link:${linkText}:${linkUrl}}`;
+    
+    if (activeTextArea.field === 'introduction') {
+      updateFormData({
+        ...formData,
+        introduction: formData.introduction + linkSyntax
+      });
+    } else {
+      const updatedSections = [...formData.sections];
+      const section = updatedSections[activeTextArea.sectionIndex];
+      const content = [...section.content];
+      content[activeTextArea.contentIndex] = content[activeTextArea.contentIndex] + linkSyntax;
+      section.content = content;
+      updateFormData({ ...formData, sections: updatedSections });
+    }
+  };
+
   if (!mounted) {
     return null; // or a loading spinner
   }
@@ -319,6 +402,12 @@ export default function NewBlogPage() {
             </button>
           </div>
         </div>
+
+        <LinkDialog
+          isOpen={isLinkDialogOpen}
+          onClose={() => setIsLinkDialogOpen(false)}
+          onInsert={handleInsertLink}
+        />
 
         <div className="bg-white rounded-xl shadow-sm p-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -532,16 +621,31 @@ export default function NewBlogPage() {
                 <h3 className="text-lg font-medium">Content</h3>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Introduction</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Introduction
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTextArea({ sectionIndex: -1, contentIndex: -1, field: 'introduction' });
+                      setIsLinkDialogOpen(true);
+                    }}
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    Insert Link
+                  </button>
+                </div>
                 <textarea
                   value={formData.introduction}
-                  onChange={(e) => updateFormData({...formData, introduction: e.target.value})}
+                  onChange={(e) => updateFormData({ ...formData, introduction: e.target.value })}
+                  className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:ring-blue-500"
                   rows={4}
-                  className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500 min-h-[120px] resize-y"
-                  placeholder="Write an engaging introduction for your blog post..."
                   required
                 />
-                <p className="mt-1 text-sm text-gray-500">The opening paragraph that introduces your topic</p>
               </div>
 
               {/* Sections Editor */}
@@ -554,7 +658,7 @@ export default function NewBlogPage() {
                     <h4 className="text-md font-medium">Content Sections</h4>
                   </div>
                 </div>
-                {formData.sections.map((section, index) => (
+                {formData.sections.map((section, sectionIndex) => (
                   <div key={section.id} className="mb-6 p-6 border rounded-lg bg-gray-50">
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex-1 grid grid-cols-2 gap-4">
@@ -566,8 +670,8 @@ export default function NewBlogPage() {
                             onChange={(e) => {
                               const title = e.target.value;
                               const updatedSections = [...formData.sections];
-                              updatedSections[index] = {
-                                ...updatedSections[index],
+                              updatedSections[sectionIndex] = {
+                                ...updatedSections[sectionIndex],
                                 title,
                                 id: title.toLowerCase()
                                   .replace(/[^a-z0-9]+/g, '-')
@@ -588,8 +692,8 @@ export default function NewBlogPage() {
                             onChange={(e) => {
                               const id = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
                               const updatedSections = [...formData.sections];
-                              updatedSections[index] = {
-                                ...updatedSections[index],
+                              updatedSections[sectionIndex] = {
+                                ...updatedSections[sectionIndex],
                                 id
                               };
                               updateFormData({ ...formData, sections: updatedSections });
@@ -603,7 +707,7 @@ export default function NewBlogPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeSection(index)}
+                        onClick={() => removeSection(sectionIndex)}
                         className="ml-4 text-red-600 hover:text-red-700"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -611,37 +715,42 @@ export default function NewBlogPage() {
                     </div>
                     <div className="space-y-4">
                       {section.content.map((content, contentIndex) => (
-                        <div key={contentIndex} className="flex gap-2">
-                          <div className="flex-1">
-                            <textarea
-                              value={content}
-                              onChange={(e) => {
-                                const newContent = [...section.content];
-                                newContent[contentIndex] = e.target.value;
-                                updateSection(index, 'content', newContent);
+                        <div key={contentIndex} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <label className="block text-sm font-medium text-gray-700">
+                              Content Paragraph {contentIndex + 1}
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveTextArea({ sectionIndex, contentIndex, field: 'content' });
+                                setIsLinkDialogOpen(true);
                               }}
-                              rows={3}
-                              className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500 min-h-[100px] resize-y"
-                              placeholder="Write your section content here..."
-                              required
-                            />
+                              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                              </svg>
+                              Insert Link
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newContent = section.content.filter((_, i) => i !== contentIndex);
-                              updateSection(index, 'content', newContent);
+                          <textarea
+                            value={content}
+                            onChange={(e) => {
+                              const updatedSections = [...formData.sections];
+                              updatedSections[sectionIndex].content[contentIndex] = e.target.value;
+                              updateFormData({ ...formData, sections: updatedSections });
                             }}
-                            className="text-red-600 hover:text-red-700 self-start mt-2"
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
+                            className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:ring-blue-500"
+                            rows={4}
+                            required
+                          />
                         </div>
                       ))}
                       <button
                         type="button"
                         onClick={() => {
-                          updateSection(index, 'content', [...section.content, '']);
+                          updateSection(sectionIndex, 'content', [...section.content, '']);
                         }}
                         className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700"
                       >
@@ -663,7 +772,7 @@ export default function NewBlogPage() {
                             onClick={() => {
                               const currentHighlights = section.highlights?.[0];
                               if (!currentHighlights) {
-                                updateSectionHighlight(index, 'title', '');
+                                updateSectionHighlight(sectionIndex, 'title', '');
                               }
                             }}
                             className="text-sm text-blue-600 hover:text-blue-700"
@@ -679,7 +788,7 @@ export default function NewBlogPage() {
                               <input
                                 type="text"
                                 value={section.highlights[0].title}
-                                onChange={(e) => updateSectionHighlight(index, 'title', e.target.value)}
+                                onChange={(e) => updateSectionHighlight(sectionIndex, 'title', e.target.value)}
                                 placeholder="e.g., Key Benefits, Important Features"
                                 className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                               />
@@ -691,14 +800,14 @@ export default function NewBlogPage() {
                                   <input
                                     type="text"
                                     value={item}
-                                    onChange={(e) => updateHighlightItem(index, itemIndex, e.target.value)}
+                                    onChange={(e) => updateHighlightItem(sectionIndex, itemIndex, e.target.value)}
                                     placeholder="✓ Enter highlight item..."
                                     className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                   />
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => removeHighlightItem(index, itemIndex)}
+                                  onClick={() => removeHighlightItem(sectionIndex, itemIndex)}
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <TrashIcon className="w-5 h-5" />
@@ -708,7 +817,7 @@ export default function NewBlogPage() {
                             
                             <button
                               type="button"
-                              onClick={() => addHighlightItem(index)}
+                              onClick={() => addHighlightItem(sectionIndex)}
                               className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700"
                             >
                               <PlusCircleIcon className="w-4 h-4 mr-1" />

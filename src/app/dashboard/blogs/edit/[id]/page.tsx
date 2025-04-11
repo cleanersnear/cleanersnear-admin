@@ -9,6 +9,7 @@ import { BlogFormData } from '../../types';
 import { blogService } from '../../services/blogService';
 import { useBlogForm } from '../../hooks/useBlogForm';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import LinkDialog from '../../components/LinkDialog';
 
 interface BlogSection {
   id: string;
@@ -23,6 +24,12 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
   const [isLoading, setIsLoading] = useState(true);
   const { formData, updateFormData, clearDraft } = useBlogForm();
   const resolvedParams = React.use(params);
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [activeTextArea, setActiveTextArea] = useState<{
+    sectionIndex: number;
+    contentIndex: number;
+    field: 'content' | 'introduction';
+  } | null>(null);
 
   const loadBlogData = useCallback(async () => {
     try {
@@ -267,6 +274,26 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
     });
   };
 
+  const handleInsertLink = (linkText: string, linkUrl: string) => {
+    if (!activeTextArea) return;
+
+    const linkSyntax = `{link:${linkText}:${linkUrl}}`;
+    
+    if (activeTextArea.field === 'introduction') {
+      updateFormData({
+        ...formData,
+        introduction: formData.introduction + linkSyntax
+      });
+    } else {
+      const updatedSections = [...formData.sections];
+      const section = updatedSections[activeTextArea.sectionIndex];
+      const content = [...section.content];
+      content[activeTextArea.contentIndex] = content[activeTextArea.contentIndex] + linkSyntax;
+      section.content = content;
+      updateFormData({ ...formData, sections: updatedSections });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -304,6 +331,12 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
             </button>
           </div>
         </div>
+
+        <LinkDialog
+          isOpen={isLinkDialogOpen}
+          onClose={() => setIsLinkDialogOpen(false)}
+          onInsert={handleInsertLink}
+        />
 
         <div className="bg-white rounded-xl shadow-sm p-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -523,16 +556,31 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                 <h3 className="text-lg font-medium">Content</h3>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Introduction</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Introduction
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTextArea({ sectionIndex: -1, contentIndex: -1, field: 'introduction' });
+                      setIsLinkDialogOpen(true);
+                    }}
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    Insert Link
+                  </button>
+                </div>
                 <textarea
                   value={formData.introduction}
-                  onChange={(e) => updateFormData({...formData, introduction: e.target.value})}
+                  onChange={(e) => updateFormData({ ...formData, introduction: e.target.value })}
+                  className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:ring-blue-500"
                   rows={4}
-                  className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500 min-h-[120px] resize-y"
-                  placeholder="Write an engaging introduction for your blog post..."
                   required
                 />
-                <p className="mt-1 text-sm text-gray-500">The opening paragraph that introduces your topic</p>
               </div>
 
               {/* Sections Editor */}
@@ -545,7 +593,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                     <h4 className="text-md font-medium">Content Sections</h4>
                   </div>
                 </div>
-                {formData.sections.map((section, index) => (
+                {formData.sections.map((section, sectionIndex) => (
                   <div key={section.id} className="mb-6 p-6 border rounded-lg bg-gray-50">
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex-1 grid grid-cols-2 gap-4">
@@ -557,8 +605,8 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                             onChange={(e) => {
                               const title = e.target.value;
                               const updatedSections = [...formData.sections];
-                              updatedSections[index] = {
-                                ...updatedSections[index],
+                              updatedSections[sectionIndex] = {
+                                ...updatedSections[sectionIndex],
                                 title,
                                 id: title.toLowerCase()
                                   .replace(/[^a-z0-9]+/g, '-')
@@ -579,8 +627,8 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                             onChange={(e) => {
                               const id = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
                               const updatedSections = [...formData.sections];
-                              updatedSections[index] = {
-                                ...updatedSections[index],
+                              updatedSections[sectionIndex] = {
+                                ...updatedSections[sectionIndex],
                                 id
                               };
                               updateFormData({ ...formData, sections: updatedSections });
@@ -594,7 +642,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeSection(index)}
+                        onClick={() => removeSection(sectionIndex)}
                         className="ml-4 text-red-600 hover:text-red-700"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -602,44 +650,39 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                     </div>
                     <div className="space-y-4">
                       {section.content.map((content, contentIndex) => (
-                        <div key={contentIndex} className="flex gap-2">
-                          <div className="flex-1">
-                            <textarea
-                              value={content}
-                              onChange={(e) => {
-                                const newContent = [...section.content];
-                                newContent[contentIndex] = e.target.value;
-                                updateSection(index, 'content', newContent);
+                        <div key={contentIndex} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <label className="block text-sm font-medium text-gray-700">
+                              Content Paragraph {contentIndex + 1}
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveTextArea({ sectionIndex, contentIndex, field: 'content' });
+                                setIsLinkDialogOpen(true);
                               }}
-                              rows={3}
-                              className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500 min-h-[100px] resize-y"
-                              placeholder="Write your section content here..."
-                              required
-                            />
+                              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                              </svg>
+                              Insert Link
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newContent = section.content.filter((_, i) => i !== contentIndex);
-                              updateSection(index, 'content', newContent);
+                          <textarea
+                            value={content}
+                            onChange={(e) => {
+                              const updatedSections = [...formData.sections];
+                              updatedSections[sectionIndex].content[contentIndex] = e.target.value;
+                              updateFormData({ ...formData, sections: updatedSections });
                             }}
-                            className="text-red-600 hover:text-red-700 self-start mt-2"
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
+                            className="block w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-blue-500 focus:ring-blue-500"
+                            rows={4}
+                            required
+                          />
                         </div>
                       ))}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateSection(index, 'content', [...section.content, '']);
-                        }}
-                        className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700"
-                      >
-                        <PlusCircleIcon className="w-4 h-4 mr-1" />
-                        Add Paragraph
-                      </button>
-
+                      
                       {/* Highlights Section */}
                       <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
                         <div className="flex items-center justify-between mb-4">
@@ -654,7 +697,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                             onClick={() => {
                               const currentHighlights = section.highlights?.[0];
                               if (!currentHighlights) {
-                                updateSectionHighlight(index, 'title', '');
+                                updateSectionHighlight(sectionIndex, 'title', '');
                               }
                             }}
                             className="text-sm text-blue-600 hover:text-blue-700"
@@ -670,7 +713,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                               <input
                                 type="text"
                                 value={section.highlights[0].title}
-                                onChange={(e) => updateSectionHighlight(index, 'title', e.target.value)}
+                                onChange={(e) => updateSectionHighlight(sectionIndex, 'title', e.target.value)}
                                 placeholder="e.g., Key Benefits, Important Features"
                                 className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                               />
@@ -682,14 +725,14 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                                   <input
                                     type="text"
                                     value={item}
-                                    onChange={(e) => updateHighlightItem(index, itemIndex, e.target.value)}
+                                    onChange={(e) => updateHighlightItem(sectionIndex, itemIndex, e.target.value)}
                                     placeholder="✓ Enter highlight item..."
                                     className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                   />
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => removeHighlightItem(index, itemIndex)}
+                                  onClick={() => removeHighlightItem(sectionIndex, itemIndex)}
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <TrashIcon className="w-5 h-5" />
@@ -699,7 +742,7 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                             
                             <button
                               type="button"
-                              onClick={() => addHighlightItem(index)}
+                              onClick={() => addHighlightItem(sectionIndex)}
                               className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700"
                             >
                               <PlusCircleIcon className="w-4 h-4 mr-1" />
