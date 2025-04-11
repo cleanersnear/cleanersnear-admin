@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrashIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import BlogImage from '../components/BlogImage';
 
 import { blogService } from '../services/blogService';
 import { useBlogForm } from '../hooks/useBlogForm';
@@ -19,7 +19,12 @@ interface BlogSection {
 export default function NewBlogPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { formData, updateFormData, clearDraft } = useBlogForm();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +77,7 @@ export default function NewBlogPage() {
 
   const loadSampleBlog = () => {
     const currentDate = new Date().toISOString().split('T')[0];
-    updateFormData({
+    const sampleData = {
       slug: '10-essential-house-cleaning-tips',
       title: '10 Essential House Cleaning Tips for a Spotless Home',
       excerpt: 'Discover professional house cleaning tips that will transform your home. Learn time-saving techniques and get expert advice for maintaining a clean, healthy living space.',
@@ -81,7 +86,7 @@ export default function NewBlogPage() {
       author_name: 'Sarah Johnson',
       author_role: 'Senior Cleaning Expert',
       author_image: '/images/blogimages/authors/sarah-johnson.jpg',
-      publish_date: new Date().toISOString().split('T')[0],
+      publish_date: currentDate,
       last_updated: currentDate,
       likes: 0,
       cover_image: '/images/blogimages/latest/house-cleaning-tips.jpg',
@@ -115,13 +120,14 @@ export default function NewBlogPage() {
           answer: 'For most homes, a deep cleaning every 2-4 weeks is recommended, depending on factors like household size, presence of pets, and daily activities. However, maintaining daily cleaning habits can reduce the frequency of deep cleaning needed.'
         }
       ]
-    });
+    };
+    updateFormData(sampleData);
   };
 
   const addSection = () => {
     const newSection = {
       id: `section-${formData.sections.length + 1}`.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
-      title: '',
+      title: 'New Section',
       content: [''],
       highlights: [{
         title: '',
@@ -235,6 +241,35 @@ export default function NewBlogPage() {
     });
   };
 
+  const clearForm = () => {
+    const currentDate = new Date().toISOString().split('T')[0];
+    const emptyForm = {
+      slug: '',
+      title: '',
+      excerpt: '',
+      category: '',
+      read_time: '',
+      author_name: '',
+      author_role: '',
+      author_image: '',
+      publish_date: currentDate,
+      last_updated: currentDate,
+      likes: 0,
+      cover_image: '',
+      is_featured: false,
+      introduction: '',
+      sections: [],
+      table_of_contents: [],
+      faqs: []
+    };
+    updateFormData(emptyForm);
+    clearDraft();
+  };
+
+  if (!mounted) {
+    return null; // or a loading spinner
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-8 px-4">
@@ -262,6 +297,16 @@ export default function NewBlogPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
               Load Sample Blog
+            </button>
+            <button
+              type="button"
+              onClick={clearForm}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Clear Form
             </button>
             <button
               onClick={() => router.push('/dashboard/blogs')}
@@ -325,25 +370,22 @@ export default function NewBlogPage() {
                       value={formData.cover_image}
                       onChange={(e) => updateFormData({...formData, cover_image: e.target.value})}
                       className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      placeholder="/images/blogimages/latest/your-image.jpg"
+                      placeholder="/images/blogimages/latest/your-image.jpg or https://example.com/image.jpg"
                       required
                     />
                     {formData.cover_image && (
                       <div className="relative h-24 w-36 rounded-lg overflow-hidden border border-gray-200">
-                        <Image
+                        <BlogImage
                           src={formData.cover_image}
                           alt="Cover preview"
                           fill
                           className="object-cover"
-                          onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/images/placeholder.jpg';
-                          }}
+                          priority
                         />
                       </div>
                     )}
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">Path to the cover image (e.g., /images/blogimages/latest/your-image.jpg)</p>
+                  <p className="mt-1 text-sm text-gray-500">Path to the cover image (local path or full URL)</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Excerpt</label>
@@ -387,6 +429,18 @@ export default function NewBlogPage() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Likes</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.likes}
+                    onChange={(e) => updateFormData({...formData, likes: parseInt(e.target.value) || 0})}
+                    className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">Number of likes for this blog post</p>
+                </div>
               </div>
             </div>
 
@@ -427,25 +481,22 @@ export default function NewBlogPage() {
                       value={formData.author_image}
                       onChange={(e) => updateFormData({...formData, author_image: e.target.value})}
                       className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      placeholder="/images/blogimages/authors/your-image.jpg"
+                      placeholder="/images/blogimages/authors/your-image.jpg or https://example.com/author.jpg"
                       required
                     />
                     {formData.author_image && (
                       <div className="relative h-16 w-16 rounded-full overflow-hidden border border-gray-200">
-                        <Image
+                        <BlogImage
                           src={formData.author_image}
                           alt="Author preview"
                           fill
                           className="object-cover"
-                          onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/images/placeholder.jpg';
-                          }}
+                          priority
                         />
                       </div>
                     )}
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">Path to the author&apos;s profile image (e.g., /images/blogimages/authors/your-image.jpg)</p>
+                  <p className="mt-1 text-sm text-gray-500">Path to the author&apos;s profile image (local path or full URL)</p>
                 </div>
               </div>
             </div>
@@ -502,14 +553,6 @@ export default function NewBlogPage() {
                     </svg>
                     <h4 className="text-md font-medium">Content Sections</h4>
                   </div>
-                  <button
-                    type="button"
-                    onClick={addSection}
-                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                  >
-                    <PlusCircleIcon className="w-4 h-4 mr-1.5" />
-                    Add Section
-                  </button>
                 </div>
                 {formData.sections.map((section, index) => (
                   <div key={section.id} className="mb-6 p-6 border rounded-lg bg-gray-50">
@@ -522,11 +565,15 @@ export default function NewBlogPage() {
                             value={section.title}
                             onChange={(e) => {
                               const title = e.target.value;
-                              updateSection(index, 'title', title);
-                              updateSection(index, 'id', title.toLowerCase()
-                                .replace(/[^a-z0-9]+/g, '-')
-                                .replace(/^-+|-+$/g, '')
-                              );
+                              const updatedSections = [...formData.sections];
+                              updatedSections[index] = {
+                                ...updatedSections[index],
+                                title,
+                                id: title.toLowerCase()
+                                  .replace(/[^a-z0-9]+/g, '-')
+                                  .replace(/^-+|-+$/g, '')
+                              };
+                              updateFormData({ ...formData, sections: updatedSections });
                             }}
                             placeholder="Section Title"
                             className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -538,7 +585,15 @@ export default function NewBlogPage() {
                           <input
                             type="text"
                             value={section.id}
-                            onChange={(e) => updateSection(index, 'id', e.target.value)}
+                            onChange={(e) => {
+                              const id = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                              const updatedSections = [...formData.sections];
+                              updatedSections[index] = {
+                                ...updatedSections[index],
+                                id
+                              };
+                              updateFormData({ ...formData, sections: updatedSections });
+                            }}
                             placeholder="Section ID (auto-generated)"
                             className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
@@ -662,9 +717,36 @@ export default function NewBlogPage() {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Add Section button at the bottom of each section */}
+                      <div className="mt-6 pt-4 border-t border-gray-200">
+                        <button
+                          type="button"
+                          onClick={addSection}
+                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                          <PlusCircleIcon className="w-4 h-4 mr-1.5" />
+                          Add New Section
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
+                
+                {/* Add first section button if no sections exist */}
+                {formData.sections.length === 0 && (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <p className="text-gray-500 mb-4">No sections added yet</p>
+                    <button
+                      type="button"
+                      onClick={addSection}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <PlusCircleIcon className="w-4 h-4 mr-1.5" />
+                      Add First Section
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* FAQs Editor */}

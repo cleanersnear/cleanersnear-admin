@@ -72,8 +72,8 @@ export default function BlogsPage() {
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return '/images/placeholder.jpg';
     
-    // If it's already a full URL with our domain, use it as is
-    if (imagePath.startsWith(domain)) {
+    // If it's already a full URL (either with our domain or any other domain), use it as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return imagePath;
     }
     

@@ -417,6 +417,18 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Likes</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.likes}
+                    onChange={(e) => updateFormData({...formData, likes: parseInt(e.target.value) || 0})}
+                    className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">Number of likes for this blog post</p>
+                </div>
               </div>
             </div>
 
@@ -532,14 +544,6 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                     </svg>
                     <h4 className="text-md font-medium">Content Sections</h4>
                   </div>
-                  <button
-                    type="button"
-                    onClick={addSection}
-                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                  >
-                    <PlusCircleIcon className="w-4 h-4 mr-1.5" />
-                    Add Section
-                  </button>
                 </div>
                 {formData.sections.map((section, index) => (
                   <div key={section.id} className="mb-6 p-6 border rounded-lg bg-gray-50">
@@ -552,11 +556,15 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                             value={section.title}
                             onChange={(e) => {
                               const title = e.target.value;
-                              updateSection(index, 'title', title);
-                              updateSection(index, 'id', title.toLowerCase()
-                                .replace(/[^a-z0-9]+/g, '-')
-                                .replace(/^-+|-+$/g, '')
-                              );
+                              const updatedSections = [...formData.sections];
+                              updatedSections[index] = {
+                                ...updatedSections[index],
+                                title,
+                                id: title.toLowerCase()
+                                  .replace(/[^a-z0-9]+/g, '-')
+                                  .replace(/^-+|-+$/g, '')
+                              };
+                              updateFormData({ ...formData, sections: updatedSections });
                             }}
                             placeholder="Section Title"
                             className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -568,7 +576,15 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                           <input
                             type="text"
                             value={section.id}
-                            onChange={(e) => updateSection(index, 'id', e.target.value)}
+                            onChange={(e) => {
+                              const id = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                              const updatedSections = [...formData.sections];
+                              updatedSections[index] = {
+                                ...updatedSections[index],
+                                id
+                              };
+                              updateFormData({ ...formData, sections: updatedSections });
+                            }}
                             placeholder="Section ID (auto-generated)"
                             className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             required
@@ -692,9 +708,36 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
                           </div>
                         )}
                       </div>
+                      
+                      {/* Add Section button at the bottom of each section */}
+                      <div className="mt-6 pt-4 border-t border-gray-200">
+                        <button
+                          type="button"
+                          onClick={addSection}
+                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                          <PlusCircleIcon className="w-4 h-4 mr-1.5" />
+                          Add New Section
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
+                
+                {/* Add first section button if no sections exist */}
+                {formData.sections.length === 0 && (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <p className="text-gray-500 mb-4">No sections added yet</p>
+                    <button
+                      type="button"
+                      onClick={addSection}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <PlusCircleIcon className="w-4 h-4 mr-1.5" />
+                      Add First Section
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* FAQs Editor */}
