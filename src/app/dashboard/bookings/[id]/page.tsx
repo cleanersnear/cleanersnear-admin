@@ -42,6 +42,6 @@ export default async function BookingPage({
     return <div>Error loading admin details</div>
   }
 
-  // Pass the pre-fetched data to the client component
+  // Only render BookingDetail (CustomerDetail is now inside it)
   return <BookingDetail id={id} initialData={{ booking, adminDetails }} />
 } 

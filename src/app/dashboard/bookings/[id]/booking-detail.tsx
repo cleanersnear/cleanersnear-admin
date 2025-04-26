@@ -11,6 +11,7 @@ import Link from 'next/link'
 import StaffAssignmentModal from './components/staff-assignment-modal'
 import NotesSection from './components/notes-section'
 import PaymentSection, { PaymentSchedule, PaymentStatus } from './components/payment-section'
+import CustomerDetail from './customer-detail'
 
 
 interface Customer {
@@ -146,19 +147,21 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
         throw new Error('Booking not found')
       }
 
-      // Then fetch customer data using the booking's customer_id
+      // Fetch customer data using the booking's id (one-way relation, same as listing page)
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
         .select('*')
-        .eq('id', bookingData.customer_id)
-        .single()
+        .eq('booking_id', id)
+
+      console.log('Booking ID:', id)
+      console.log('Customer fetch result:', customerData, customerError)
 
       if (customerError) {
         console.error('Customer fetch error:', customerError)
         throw customerError
       }
 
-      if (!customerData) {
+      if (!customerData || customerData.length === 0) {
         throw new Error('Customer not found')
       }
 
@@ -174,8 +177,11 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
         throw serviceError
       }
 
-      // Update state with the fetched data
-      setBooking(bookingData)
+      // Update state with the fetched data, attach customer as in listing page
+      setBooking({
+        ...bookingData,
+        customer: customerData[0]
+      })
       setAdminDetails({
         id: bookingData.id.toString(),
         booking_id: bookingData.id.toString(),
@@ -351,23 +357,6 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
     return configs[status] || configs.new
   }
 
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return 'N/A'
-    try {
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) return 'Invalid Date'
-      return format(date, 'MMMM d, yyyy')
-    } catch (error) {
-      console.error('Date formatting error:', error)
-      return 'Invalid Date'
-    }
-  }
-
-  const formatTime = (timeString: string | null | undefined) => {
-    if (!timeString) return 'N/A'
-    return timeString
-  }
-
   const handleStaffAssignment = async (staffId: string, staffName: string) => {
     try {
       // Create new staff assignment
@@ -469,32 +458,8 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
                 <dd className="mt-1 text-sm text-gray-900">{booking.service_type}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Date</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {formatDate(booking.customer.scheduling?.date)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Time</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {formatTime(booking.customer.scheduling?.time)}
-                </dd>
-              </div>
-              <div>
                 <dt className="text-sm font-medium text-gray-500">Total Price</dt>
                 <dd className="mt-1 text-sm text-gray-900">${booking.total_price}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Flexible Date</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {booking.customer.scheduling?.is_flexible_date ? 'Yes' : 'No'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Flexible Time</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {booking.customer.scheduling?.is_flexible_time ? 'Yes' : 'No'}
-                </dd>
               </div>
             </dl>
           </div>
@@ -514,41 +479,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
         {/* Right Column (Full width on mobile, 1/3 on desktop) */}
         <div className="space-y-6">
           {/* Customer Information */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Customer Information</h3>
-              <dl className="space-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {`${booking.customer.first_name} ${booking.customer.last_name}`}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Email</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{booking.customer.email}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Phone</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{booking.customer.phone}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Address</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {booking.customer.address?.street}, {booking.customer.address?.city}
-                  </dd>
-                </div>
-                <div className="pt-4">
-                  <Link
-                    href={`/dashboard/customers/${booking.customer.id}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    View Customer Profile →
-                  </Link>
-                </div>
-              </dl>
-            </div>
-          </div>
+          <CustomerDetail bookingId={booking.id.toString()} />
 
           {/* Payment Section */}
           <div className="bg-white rounded-lg shadow">
