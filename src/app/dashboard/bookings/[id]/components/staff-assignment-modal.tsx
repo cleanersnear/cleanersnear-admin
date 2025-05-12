@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import Link from 'next/link'
 import { toast } from 'react-hot-toast'
 
 type Staff = {
@@ -128,15 +127,6 @@ export default function StaffAssignmentModal({
                   </option>
                 ))}
               </select>
-              {selectedStaff && (
-                <Link
-                  href={`/dashboard/staff/${selectedStaff}`}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                  target="_blank"
-                >
-                  View Staff Profile →
-                </Link>
-              )}
             </div>
 
             <div className="flex justify-end space-x-3">

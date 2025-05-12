@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'react-hot-toast';
-import Image from 'next/image';
+import BlogImage from '../blogs/components/BlogImage';
 import { 
   ArrowUpTrayIcon, 
   TrashIcon,
@@ -105,18 +105,23 @@ export default function FilesPage() {
         return;
       }
 
-      // Process files
+      // Process files with better URL handling
       const processedFiles = await Promise.all(
         data.map(async (item) => {
-          // For files, get the public URL
+          // Get the public URL
           const { data: { publicUrl } } = supabase.storage
             .from(STORAGE_BUCKET)
             .getPublicUrl(item.name);
 
+          // Clean up the URL if it's a Supabase URL
+          const cleanUrl = publicUrl.includes('supabase.co') 
+            ? publicUrl.replace(/([^:]\/)\/+/g, "$1")
+            : publicUrl;
+
           return {
             name: item.name,
             path: item.name,
-            url: publicUrl,
+            url: cleanUrl,
             type: item.metadata?.mimetype || 'unknown',
             size: item.metadata?.size || 0,
             created_at: item.created_at,
@@ -408,11 +413,12 @@ export default function FilesPage() {
                   className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 hover:border-blue-500 transition-colors"
                 >
                   <div className="relative aspect-square mb-3 sm:mb-4">
-                    <Image
+                    <BlogImage
                       src={file.url}
                       alt={file.name}
                       fill
                       className="object-cover rounded-lg"
+                      priority
                     />
                   </div>
                   <div className="space-y-2">
@@ -480,11 +486,12 @@ export default function FilesPage() {
                 >
                   <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-0">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 relative rounded-lg overflow-hidden">
-                      <Image
+                      <BlogImage
                         src={file.url}
                         alt={file.name}
                         fill
                         className="object-cover"
+                        priority
                       />
                     </div>
                     <div className="flex-1 min-w-0">

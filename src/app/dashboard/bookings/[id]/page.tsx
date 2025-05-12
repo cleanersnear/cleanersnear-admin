@@ -42,6 +42,9 @@ export default async function BookingPage({
     return <div>Error loading admin details</div>
   }
 
-  // Only render BookingDetail (CustomerDetail is now inside it)
-  return <BookingDetail id={id} initialData={{ booking, adminDetails }} />
+  return (
+    <div className="space-y-6">
+      <BookingDetail id={id} initialData={{ booking, adminDetails }} />
+    </div>
+  )
 } 

@@ -24,7 +24,7 @@ type Payment = {
 }
 
 export type PaymentSchedule = 'upfront' | 'on_cleaning_day' | 'after_cleaning'
-export type PaymentStatus = 'unpaid' | 'partially_paid' | 'paid' | 'refunded'
+export type PaymentStatus = 'unpaid' | 'partially_paid' | 'paid' | 'refunded' | 'invoiced' | 'pending'
 
 type PaymentSectionProps = {
   bookingId: string
@@ -52,6 +52,7 @@ export default function PaymentSection({
   onUpdate,
   updateBookingStatus
 }: PaymentSectionProps) {
+  const [activeTab, setActiveTab] = useState<'payment' | 'transactions'>('payment')
   const [isAddingPayment, setIsAddingPayment] = useState(false)
   const [newPayment, setNewPayment] = useState<{
     amount: number
@@ -216,30 +217,42 @@ export default function PaymentSection({
 
   return (
     <div className="space-y-6">
-      {/* Payment Header with Status */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          
-          <div className="flex items-center gap-4 text-sm">
-            <span className={`px-2 py-1 rounded-full ${
+      {/* Payment Header with Status Badge */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-medium text-gray-900">Payment</h3>
+        <span className={`px-2 py-1 rounded-full text-sm font-semibold ${
               paymentStatus === 'paid' ? 'bg-green-100 text-green-800' :
               paymentStatus === 'partially_paid' ? 'bg-yellow-100 text-yellow-800' :
               paymentStatus === 'refunded' ? 'bg-orange-100 text-orange-800' :
+          paymentStatus === 'invoiced' ? 'bg-blue-100 text-blue-800' :
+          paymentStatus === 'pending' ? 'bg-gray-200 text-gray-800' :
               'bg-gray-100 text-gray-800'
             }`}>
               {paymentStatus?.charAt(0).toUpperCase() + paymentStatus?.slice(1).replace('_', ' ') || 'Unpaid'}
             </span>
-            <span className="text-gray-500">
-              Schedule: {paymentSchedule?.split('_').map(word => 
-                word?.charAt(0).toUpperCase() + word?.slice(1)
-              ).join(' ') || 'After Cleaning'}
-            </span>
           </div>
-        </div>
+
+      {/* Tab Bar */}
+      <div className="flex border-b mb-4">
+        <button
+          className={`px-4 py-2 text-sm font-medium focus:outline-none border-b-2 transition-all ${activeTab === 'payment' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+          onClick={() => setActiveTab('payment')}
+        >
+          Payments & Refunds
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium focus:outline-none border-b-2 transition-all ${activeTab === 'transactions' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+          onClick={() => setActiveTab('transactions')}
+        >
+          Transactions
+        </button>
       </div>
 
-      {/* Payment Summary */}
-      <div className="bg-gray-50 rounded-lg p-4">
+      {/* Tab Content */}
+      {activeTab === 'payment' && (
+        <div>
+          {/* Payments & Refunds Tab */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-gray-500">Original Price</p>
@@ -274,26 +287,6 @@ export default function PaymentSection({
           </div>
         </div>
       </div>
-
-      {/* Payment Status and Schedule */}
-      <div className="grid grid-cols-1 gap-4">
-        <div>
-          <label className="block text-sm text-gray-500 mb-1">Payment Schedule</label>
-          <select
-            value={paymentSchedule}
-            onChange={(e) => handleScheduleChange(e.target.value as PaymentSchedule)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-          >
-            <option value="upfront">Pay Upfront</option>
-            <option value="on_cleaning_day">Pay on Cleaning Day</option>
-            <option value="after_cleaning">Pay After Cleaning</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Payment History */}
-      <div>
-        {/* Buttons aligned left */}
         <div className="flex gap-2 mb-3">
           <button
             onClick={() => setIsAddingPayment(true)}
@@ -309,11 +302,25 @@ export default function PaymentSection({
             Process Refund
           </button>
         </div>
+          {/* Payment Schedule Dropdown */}
+          <div>
+            <label className="block text-sm text-gray-500 mb-1">Payment Schedule</label>
+            <select
+              value={paymentSchedule}
+              onChange={(e) => handleScheduleChange(e.target.value as PaymentSchedule)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            >
+              <option value="upfront">Pay Upfront</option>
+              <option value="on_cleaning_day">Pay on Cleaning Day</option>
+              <option value="after_cleaning">Pay After Cleaning</option>
+            </select>
+          </div>
+        </div>
+      )}
 
-        {/* Title after buttons */}
+      {activeTab === 'transactions' && (
+        <div>
         <h4 className="text-sm font-medium text-gray-900 mb-3">Payment History</h4>
-
-        {/* Payment history list */}
         <div className="space-y-2">
           {payments.length > 0 ? (
             payments.map((payment) => (
@@ -348,6 +355,7 @@ export default function PaymentSection({
           )}
         </div>
       </div>
+      )}
 
       {/* Add Payment and Adjust Price Modals */}
       {isAddingPayment && (
@@ -465,7 +473,6 @@ export default function PaymentSection({
         </div>
       )}
 
-      {/* Add Refund Modal */}
       {isRefunding && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">

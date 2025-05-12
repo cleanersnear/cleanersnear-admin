@@ -2,16 +2,20 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format } from 'date-fns'
-import { ArrowLeftIcon, XMarkIcon } from '@heroicons/react/24/outline'
+
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import ServiceDetails from '@/app/dashboard/bookings/[id]/service-details'
-import Link from 'next/link'
+
 import StaffAssignmentModal from './components/staff-assignment-modal'
 import NotesSection from './components/notes-section'
 import PaymentSection, { PaymentSchedule, PaymentStatus } from './components/payment-section'
 import CustomerDetail from './customer-detail'
+import EmailClientWrapper from './components/EmailClientWrapper'
+import FulfillmentActions from './components/FulfillmentActions'
+import Cookies from 'js-cookie'
+import StaffActions from './components/StaffActions'
 
 
 interface Customer {
@@ -63,15 +67,11 @@ interface ServiceDetails {
   updated_at: string
 }
 
-type BookingStatus =
-  | 'new'
+type FulfillmentStatus =
+  | 'pending'
   | 'confirmed'
-  | 'in_progress'
   | 'completed'
   | 'cancelled'
-  | 'invoiced'
-  | 'paid'
-  | 'refunded'
 
 type PaymentMethod = 'cash' | 'card' | 'online' | 'bank_transfer' | 'refund'
 
@@ -121,6 +121,17 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
   const [showStaffModal, setShowStaffModal] = useState(false)
   const supabase = createClientComponentClient()
 
+  // Restore scroll position on mount (with delay for notification)
+  useEffect(() => {
+    const scroll = Cookies.get('booking_scroll')
+    if (scroll) {
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(scroll, 10))
+        Cookies.remove('booking_scroll')
+      }, 500) // Delay to allow notification to render
+    }
+  }, [])
+
   const fetchBookingDetails = useCallback(async () => {
     // If we have initial data, don't fetch again
     if (initialData?.booking) {
@@ -130,7 +141,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
 
     try {
       setIsLoading(true)
-      
+
       // First fetch booking data
       const { data: bookingData, error: bookingError } = await supabase
         .from('bookings')
@@ -214,7 +225,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
 
   const fetchAdminDetails = useCallback(async () => {
     if (!booking) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('booking_admin_details')
@@ -289,31 +300,37 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
     fetchAdminDetails()
   }, [fetchBookingDetails, fetchAdminDetails])
 
-  const updateBookingStatus = async (newStatus: BookingStatus) => {
-    if (!booking) return
+  const updateBookingStatus = async (newStatus: FulfillmentStatus) => {
+    if (!booking) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
+      // Save scroll position before updating
+      Cookies.set('booking_scroll', String(window.scrollY));
+
       const { error } = await supabase
         .from('bookings')
         .update({ status: newStatus })
-        .eq('id', booking.id)
+        .eq('id', booking.id);
 
-      if (error) throw error
+      if (error) throw error;
 
-      setBooking(prev => prev ? { ...prev, status: newStatus } : null)
-      toast.success('Booking status updated')
+      setBooking(prev => prev ? { ...prev, status: newStatus } : null);
+      toast.success('Booking status updated');
+
+      // Reload the page (client-side, preserves scroll restoration)
+      router.refresh();
     } catch (error) {
-      console.error('Error updating status:', error)
-      toast.error('Failed to update booking status')
+      console.error('Error updating status:', error);
+      toast.error('Failed to update booking status');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const getStatusConfig = (status: BookingStatus) => {
+  const getStatusConfig = (status: FulfillmentStatus) => {
     const configs = {
-      new: {
+      pending: {
         color: 'bg-purple-100 text-purple-800',
         icon: 'SparklesIcon',
         label: 'New Booking'
@@ -322,11 +339,6 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
         color: 'bg-blue-100 text-blue-800',
         icon: 'CheckCircleIcon',
         label: 'Confirmed'
-      },
-      in_progress: {
-        color: 'bg-yellow-100 text-yellow-800',
-        icon: 'ClockIcon',
-        label: 'In Progress'
       },
       completed: {
         color: 'bg-green-100 text-green-800',
@@ -337,24 +349,9 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
         color: 'bg-red-100 text-red-800',
         icon: 'XCircleIcon',
         label: 'Cancelled'
-      },
-      invoiced: {
-        color: 'bg-indigo-100 text-indigo-800',
-        icon: 'ReceiptIcon',
-        label: 'Invoiced'
-      },
-      paid: {
-        color: 'bg-emerald-100 text-emerald-800',
-        icon: 'BanknotesIcon',
-        label: 'Paid'
-      },
-      refunded: {
-        color: 'bg-orange-100 text-orange-800',
-        icon: 'ArrowPathIcon',
-        label: 'Refunded'
       }
     }
-    return configs[status] || configs.new
+    return configs[status] || configs.pending
   }
 
   const handleStaffAssignment = async (staffId: string, staffName: string) => {
@@ -437,12 +434,20 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">Booking Details</h1>
             <p className="text-sm text-gray-600">#{booking.booking_number}</p>
+            <p
+              className={`inline-block px-3 py-1 rounded-full text-sm font-semibold shadow-sm ${getStatusConfig(booking.status as FulfillmentStatus).color}`}
+            >
+              {getStatusConfig(booking.status as FulfillmentStatus).label}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusConfig(booking.status as BookingStatus).color}`}>
-            {getStatusConfig(booking.status as BookingStatus).label}
-          </span>
+          <EmailClientWrapper bookingId={booking.id.toString()} />
+          <FulfillmentActions
+            currentStatus={booking.status as FulfillmentStatus}
+            onStatusChange={updateBookingStatus}
+            isLoading={isLoading}
+          />
         </div>
       </div>
 
@@ -484,7 +489,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
           {/* Payment Section */}
           <div className="bg-white rounded-lg shadow">
             <div className="p-4 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Payment</h3>
+              
               <PaymentSection
                 bookingId={id}
                 originalPrice={booking.total_price}
@@ -534,168 +539,14 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
             </div>
           </div>
 
-          {/* Fulfillment Actions */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Fulfillment</h3>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusConfig(booking.status as BookingStatus).color}`}>
-                  {getStatusConfig(booking.status as BookingStatus).label}
-                </span>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {booking.status !== 'confirmed' && (
-                    <button
-                      onClick={() => updateBookingStatus('confirmed')}
-                      className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                      disabled={isLoading}
-                    >
-                      Confirm Booking
-                    </button>
-                  )}
-                  {booking.status !== 'in_progress' && (
-                    <button
-                      onClick={() => updateBookingStatus('in_progress')}
-                      className="px-3 py-1.5 text-sm bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50"
-                      disabled={isLoading}
-                    >
-                      Mark In Progress
-                    </button>
-                  )}
-                  {booking.status !== 'completed' && (
-                    <button
-                      onClick={() => updateBookingStatus('completed')}
-                      className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                      disabled={isLoading}
-                    >
-                      Mark Complete
-                    </button>
-                  )}
-                  {booking.status !== 'invoiced' && (
-                    <button
-                      onClick={() => updateBookingStatus('invoiced')}
-                      className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                      disabled={isLoading}
-                    >
-                      Mark Invoiced
-                    </button>
-                  )}
-                </div>
-
-                {/* Status Dropdown */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 pt-2 border-t">
-                  <select
-                    value={booking.status}
-                    onChange={(e) => updateBookingStatus(e.target.value as BookingStatus)}
-                    className="flex-1 w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={isLoading}
-                  >
-                    <option value="new">New Booking</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="invoiced">Invoiced</option>
-                    <option value="paid">Paid</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="refunded">Refunded</option>
-                  </select>
-                  {booking.status !== 'cancelled' && (
-                    <button
-                      onClick={() => updateBookingStatus('cancelled')}
-                      className="w-full sm:w-auto px-3 py-2 text-sm border border-red-300 text-red-700 rounded-md hover:bg-red-50 disabled:opacity-50"
-                      disabled={isLoading}
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-
-                {/* Status Timeline */}
-                <div className="mt-4 pt-4 border-t">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Status History</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <span className="w-4 h-4 rounded-full bg-gray-200 mr-2"></span>
-                      Current: {getStatusConfig(booking.status as BookingStatus).label}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Staff Assignment */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Staff</h3>
-              <div className="space-y-4">
-                {/* Current Assignments */}
-                {adminDetails?.staff_assigned && adminDetails.staff_assigned.length > 0 ? (
-                  <div className="space-y-3">
-                    {adminDetails.staff_assigned.map((staff, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-gray-900">{staff.name}</p>
-                            <Link
-                              href={`/dashboard/staff/${staff.id}`}
-                              className="text-xs text-blue-600 hover:text-blue-800"
-                              target="_blank"
-                            >
-                              View Profile
-                            </Link>
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            Assigned {format(new Date(staff.assigned_at || ''), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveStaff(staff.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <XMarkIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-500 text-center py-2">
-                    No staff currently assigned
-                  </div>
-                )}
-
-                {/* Staff Assignment Actions */}
-                <div className="space-y-2">
-                  {adminDetails?.staff_assigned && adminDetails.staff_assigned.length > 0 ? (
-                    <>
-                      <button
-                        onClick={() => setShowStaffModal(true)}
-                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                      >
-                        Change Staff
-                      </button>
-                      <button
-                        onClick={() => handleRemoveStaff(adminDetails.staff_assigned[0].id)}
-                        className="w-full border border-red-300 text-red-700 px-4 py-2 rounded-md hover:bg-red-50"
-                      >
-                        Remove Staff
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setShowStaffModal(true)}
-                      className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-                    >
-                      Assign Staff
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          <StaffActions
+            staffAssigned={adminDetails?.staff_assigned || []}
+            onAssign={handleStaffAssignment}
+            onRemove={handleRemoveStaff}
+            onShowModal={() => setShowStaffModal(true)}
+            isLoading={isLoading}
+          />
 
           {/* Notes Section */}
           <div className="bg-white rounded-lg shadow">

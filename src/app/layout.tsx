@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/site.webmanifest',
-  themeColor: '#ffffff',
+  
   metadataBase: new URL(env.adminUrl as string),
   alternates: {
     canonical: env.adminUrl as string,

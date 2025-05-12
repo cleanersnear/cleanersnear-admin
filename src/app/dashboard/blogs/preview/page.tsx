@@ -150,9 +150,7 @@ export default function BlogPreviewPage() {
                     {section.title}
                   </h2>
                   {section.content.map((paragraph, pIndex) => (
-                    <p key={pIndex} className="text-lg leading-relaxed mb-6">
-                      {paragraph}
-                    </p>
+                    <p key={pIndex} className="text-lg leading-relaxed mb-6" dangerouslySetInnerHTML={{ __html: paragraph }} />
                   ))}
                   {section.highlights?.map((highlight, hIndex) => (
                     <div key={hIndex} className="bg-gray-50 p-8 rounded-2xl my-8">
