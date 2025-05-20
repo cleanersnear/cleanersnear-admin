@@ -18,19 +18,34 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // First sign in with password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (error) throw error
+      if (signInError) throw signInError
 
+      // Verify session was created before redirecting
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) throw sessionError
+      
+      if (!session) {
+        throw new Error('Failed to establish session')
+      }
+      
       toast.success('Login successful')
-      router.push('/dashboard')
+      
+      // Small timeout to ensure cookies are set
+      setTimeout(() => {
+        router.push('/dashboard')
+        // Also use router.refresh to ensure the app picks up the new auth state
+        router.refresh()
+      }, 300)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to login'
       toast.error(errorMessage)
-    } finally {
       setIsLoading(false)
     }
   }

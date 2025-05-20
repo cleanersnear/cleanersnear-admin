@@ -23,6 +23,7 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   FolderIcon,
+  ChatBubbleBottomCenterTextIcon,
 } from '@heroicons/react/24/outline'
 import NotificationComponent from './notification/notification'
 
@@ -50,6 +51,7 @@ const navigation = [
   {
     name: 'Communications',
     children: [
+      { name: 'Feedback', href: '/dashboard/feedback', icon: ChatBubbleBottomCenterTextIcon },
       { name: 'Subscribers', href: '/dashboard/subscribers', icon: RssIcon },
       { name: 'Contact Messages', href: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
     ]

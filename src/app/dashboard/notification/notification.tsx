@@ -11,16 +11,19 @@ interface Notification {
     title: string
     content: string
     status: 'read' | 'unread'
-    booking_id: string
+    booking_id?: string
+    feedback_id?: string
     metadata: {
-        customerName: string
-        bookingNumber: string
-        serviceType: string
-        scheduledDate: string
-        scheduledTime: string
-        customerEmail: string
-        customerPhone: string
-        totalPrice: number
+        customerName?: string
+        bookingNumber?: string
+        serviceType?: string
+        scheduledDate?: string
+        scheduledTime?: string
+        customerEmail?: string
+        customerPhone?: string
+        totalPrice?: number
+        rating?: number
+        feedbackOption?: string
     }
     created_at: string
 }
@@ -68,7 +71,13 @@ export default function NotificationComponent() {
 
     // Handle notification click
     const handleNotificationClick = (notification: Notification) => {
-        router.push(`/dashboard/bookings/${notification.booking_id}`)
+        // Route based on notification type
+        if (notification.type === 'feedback' && notification.feedback_id) {
+            router.push(`/dashboard/feedback/${notification.feedback_id}`)
+        } else if (notification.booking_id) {
+            router.push(`/dashboard/bookings/${notification.booking_id}`)
+        }
+        
         setIsOpen(false)
     }
 
@@ -116,6 +125,74 @@ export default function NotificationComponent() {
             subscription.unsubscribe()
         }
     }, [fetchNotifications, supabase])
+
+    // Render notification content based on type
+    const renderNotificationContent = (notification: Notification) => {
+        if (notification.type === 'feedback') {
+            return (
+                <>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                        {notification.content}
+                    </p>
+                    <div className="mt-2 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
+                        <div className="text-xs text-gray-500">
+                            {notification.metadata.rating && (
+                                <p>Rating: {notification.metadata.rating}/5</p>
+                            )}
+                            {notification.metadata.feedbackOption && (
+                                <p>Opinion: {notification.metadata.feedbackOption}</p>
+                            )}
+                            {notification.metadata.customerEmail && (
+                                <p>Email: {notification.metadata.customerEmail}</p>
+                            )}
+                        </div>
+                        {notification.status === 'unread' && (
+                            <button
+                                onClick={(e) => handleMarkAsRead(e, notification)}
+                                className="text-xs text-blue-600 hover:text-blue-800 
+                                    bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded
+                                    transition-colors duration-200 w-full sm:w-auto"
+                            >
+                                Mark as read
+                            </button>
+                        )}
+                    </div>
+                </>
+            )
+        }
+        
+        // Default booking notification content
+        return (
+            <>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                    {notification.content}
+                </p>
+                <div className="mt-2 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
+                    <div className="text-xs text-gray-500">
+                        {notification.metadata.serviceType && (
+                            <p>Service: {notification.metadata.serviceType}</p>
+                        )}
+                        {notification.metadata.scheduledDate && (
+                            <p>Date: {notification.metadata.scheduledDate}</p>
+                        )}
+                        {notification.metadata.scheduledTime && (
+                            <p>Time: {notification.metadata.scheduledTime}</p>
+                        )}
+                    </div>
+                    {notification.status === 'unread' && (
+                        <button
+                            onClick={(e) => handleMarkAsRead(e, notification)}
+                            className="text-xs text-blue-600 hover:text-blue-800 
+                                bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded
+                                transition-colors duration-200 w-full sm:w-auto"
+                        >
+                            Mark as read
+                        </button>
+                    )}
+                </div>
+            </>
+        )
+    }
 
     return (
         <div className="relative" ref={dropdownRef}>
@@ -166,31 +243,20 @@ export default function NotificationComponent() {
                                     onClick={() => handleNotificationClick(notification)}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <h4 className="text-sm sm:text-base font-medium">{notification.title}</h4>
+                                        <h4 className="text-sm sm:text-base font-medium">
+                                            {notification.title}
+                                            {notification.type === 'feedback' && (
+                                                <span className="ml-2 text-xs font-normal px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full">
+                                                    Feedback
+                                                </span>
+                                            )}
+                                        </h4>
                                         <span className="text-xs text-gray-500">
                                             {new Date(notification.created_at).toLocaleString()}
                                         </span>
                                     </div>
-                                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                                        {notification.content}
-                                    </p>
-                                    <div className="mt-2 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
-                                        <div className="text-xs text-gray-500">
-                                            <p>Service: {notification.metadata.serviceType}</p>
-                                            <p>Date: {notification.metadata.scheduledDate}</p>
-                                            <p>Time: {notification.metadata.scheduledTime}</p>
-                                        </div>
-                                        {notification.status === 'unread' && (
-                                            <button
-                                                onClick={(e) => handleMarkAsRead(e, notification)}
-                                                className="text-xs text-blue-600 hover:text-blue-800 
-                                                    bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded
-                                                    transition-colors duration-200 w-full sm:w-auto"
-                                            >
-                                                Mark as read
-                                            </button>
-                                        )}
-                                    </div>
+                                    
+                                    {renderNotificationContent(notification)}
                                 </div>
                             ))
                         )}

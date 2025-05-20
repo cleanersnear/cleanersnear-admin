@@ -58,7 +58,7 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith('/api')
   )) {
     const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = '/login'
+    redirectUrl.pathname = '/auth/login'
     redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
@@ -70,5 +70,6 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/api/:path*',
+    '/auth/:path*',
   ],
 } 
