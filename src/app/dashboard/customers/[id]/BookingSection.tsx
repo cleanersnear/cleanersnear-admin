@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface Booking {
   id: string
@@ -8,50 +7,23 @@ interface Booking {
   service_type?: string
   status?: string
   total_price?: number
-  scheduling?: {
-    date?: string
-    time?: string
-  }
   created_at?: string
 }
 
-export default function BookingSection({ email, currentCustomerId }: { email: string, currentCustomerId: string }) {
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [loading, setLoading] = useState(true)
-  const supabase = createClientComponentClient()
+interface BookingSectionProps {
+  email: string
+  currentCustomerId: string
+  bookings: Booking[]
+  scheduling?: {
+    date?: string
+    time?: string
+    is_flexible_date?: boolean
+    is_flexible_time?: boolean
+  } | null
+}
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      setLoading(true)
-      // 1. Find all customers with the same email
-      const { data: customers } = await supabase
-        .from('customers')
-        .select('id, booking_id')
-        .eq('email', email)
-      if (!customers) {
-        setBookings([])
-        setLoading(false)
-        return
-      }
-      // 2. Collect all booking_ids (filter out null/undefined)
-      const bookingIds = customers
-        .map((c: { booking_id?: string }) => c.booking_id)
-        .filter((id: string | undefined) => !!id)
-      if (bookingIds.length === 0) {
-        setBookings([])
-        setLoading(false)
-        return
-      }
-      // 3. Fetch all bookings with those IDs
-      const { data: bookingsData } = await supabase
-        .from('bookings')
-        .select('*')
-        .in('id', bookingIds)
-      setBookings(bookingsData || [])
-      setLoading(false)
-    }
-    if (email) fetchBookings()
-  }, [email, supabase])
+export default function BookingSection({ currentCustomerId, bookings, scheduling }: BookingSectionProps) {
+  const [loading] = useState(false)
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -75,9 +47,11 @@ export default function BookingSection({ email, currentCustomerId }: { email: st
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">
-                  {booking.scheduling?.date} {booking.scheduling?.time}
-                </p>
+                {booking.id === currentCustomerId && scheduling ? (
+                  <p className="text-sm text-gray-500">
+                    {scheduling.date} {scheduling.time}
+                  </p>
+                ) : null}
                 <p className="text-xs text-gray-400">{booking.status} | {booking.service_type}</p>
               </div>
               <Link

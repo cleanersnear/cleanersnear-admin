@@ -7,6 +7,15 @@ import Link from 'next/link'
 import { PencilIcon, TrashIcon, ArrowLeftIcon, EllipsisVerticalIcon, EnvelopeIcon, PhoneIcon } from '@heroicons/react/24/outline'
 import BookingSection from './BookingSection'
 
+interface Booking {
+  id: string
+  booking_number?: string
+  service_type?: string
+  status?: string
+  total_price?: number
+  created_at?: string
+}
+
 interface Customer {
   id: string
   booking_id: string
@@ -32,6 +41,7 @@ interface Customer {
     is_flexible_time?: boolean
   } | null
   related_customers?: Customer[]
+  bookings?: Booking[]
 }
 
 export default function CustomerDetailPage() {
@@ -49,21 +59,30 @@ export default function CustomerDetailPage() {
     if (!id) return
     const fetchCustomer = async () => {
       setIsLoading(true)
+      // Fetch the main customer
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
-        .select('*, bookings(booking_number)')
+        .select('*')
         .eq('id', id)
         .single()
       if (!customerError && customerData) {
-        const { data: relatedData } = await supabase
+        // Fetch all customers with the same email (excluding the current one)
+        const { data: relatedCustomers } = await supabase
           .from('customers')
-          .select('*, bookings(booking_number)')
+          .select('*')
           .eq('email', customerData.email)
           .neq('id', id)
+        // Collect all customer IDs (main + related)
+        const allCustomerIds = [customerData.id, ...(relatedCustomers?.map((c: Customer) => c.id) || [])]
+        // Fetch all bookings for these customers
+        const { data: bookingsData } = await supabase
+          .from('bookings')
+          .select('*')
+          .in('customer_id', allCustomerIds)
         setCustomer({
           ...customerData,
-          booking_number: customerData.bookings?.booking_number,
-          related_customers: relatedData || []
+          bookings: bookingsData || [],
+          related_customers: relatedCustomers || []
         })
       }
       setIsLoading(false)
@@ -225,7 +244,7 @@ export default function CustomerDetailPage() {
         {/* Left column: Bookings, Transactions, History, Activity */}
         <div className="md:col-span-2 space-y-6">
           {/* Bookings Card */}
-          <BookingSection email={customer.email} currentCustomerId={customer.id} />
+          <BookingSection email={customer.email} currentCustomerId={customer.id} bookings={customer.bookings || []} scheduling={customer.scheduling} />
           {/* Transactions Card (Placeholder) */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold mb-4">Transactions</h2>
@@ -256,7 +275,11 @@ export default function CustomerDetailPage() {
               </div>
               <div>
                 <label className="text-sm text-gray-500">Booking Number</label>
-                <p className="font-medium">{customer.booking_number || 'N/A'}</p>
+                <p className="font-medium">
+                  {customer.bookings && customer.bookings.length > 0
+                    ? customer.bookings.map(b => b.booking_number || 'N/A').join(', ')
+                    : 'N/A'}
+                </p>
               </div>
               <div>
                 <label className="text-sm text-gray-500">Address</label>

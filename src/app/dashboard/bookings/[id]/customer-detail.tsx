@@ -28,20 +28,31 @@ interface Customer {
   } | null
 }
 
-export default function CustomerDetail({ bookingId }: { bookingId: string }) {
+export default function CustomerDetail({ bookingId, disabled = false }: { bookingId: string, disabled?: boolean }) {
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClientComponentClient()
 
   useEffect(() => {
+    if (disabled) return;
     const fetchCustomer = async () => {
       setIsLoading(true)
       const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('booking_id', bookingId)
-      if (!error && data && data.length > 0) {
-        setCustomer(data[0])
+        .from('bookings')
+        .select(`
+          customers!bookings_customer_id_fkey(*)
+        `)
+        .eq('id', bookingId)
+        .single()
+
+      if (!error && data?.customers) {
+        if (Array.isArray(data.customers) && data.customers.length > 0) {
+          setCustomer(data.customers[0])
+        } else if (!Array.isArray(data.customers)) {
+          setCustomer(data.customers)
+        } else {
+          setCustomer(null)
+        }
       } else {
         setCustomer(null)
         toast.error('Customer not found')
@@ -49,8 +60,9 @@ export default function CustomerDetail({ bookingId }: { bookingId: string }) {
       setIsLoading(false)
     }
     if (bookingId) fetchCustomer()
-  }, [bookingId, supabase])
+  }, [bookingId, supabase, disabled])
 
+  if (disabled) return null;
   if (isLoading) {
     return <div>Loading customer info...</div>
   }

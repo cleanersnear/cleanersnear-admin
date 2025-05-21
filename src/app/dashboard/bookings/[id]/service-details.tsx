@@ -27,6 +27,7 @@ import type { UpholsteryCleaningService } from './services/upholstery-cleaning'
 interface ServiceDetailsProps {
   bookingId: string
   serviceType: string
+  disabled?: boolean
 }
 
 // Create a union type for all service types
@@ -40,7 +41,7 @@ type ServiceData =
   | MoveInOutService 
   | UpholsteryCleaningService
 
-export default function ServiceDetails({ bookingId, serviceType }: ServiceDetailsProps) {
+export default function ServiceDetails({ bookingId, serviceType, disabled = false }: ServiceDetailsProps) {
   const [serviceData, setServiceData] = useState<ServiceData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClientComponentClient()
@@ -61,6 +62,7 @@ export default function ServiceDetails({ bookingId, serviceType }: ServiceDetail
   }, [])
 
   const fetchServiceData = useCallback(async () => {
+    if (disabled) return;
     const table = getServiceTable(serviceType)
     if (!table) {
       console.error('Invalid service type:', serviceType)
@@ -83,12 +85,13 @@ export default function ServiceDetails({ bookingId, serviceType }: ServiceDetail
     } finally {
       setIsLoading(false)
     }
-  }, [bookingId, serviceType, getServiceTable, supabase])
+  }, [bookingId, serviceType, getServiceTable, supabase, disabled])
 
   useEffect(() => {
     fetchServiceData()
   }, [fetchServiceData])
 
+  if (disabled) return null;
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-4">

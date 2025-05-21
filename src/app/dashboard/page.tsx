@@ -56,26 +56,35 @@ export default function DashboardPage() {
         supabase
           .from('customers')
           .select('id, scheduling')
-          .order('scheduling->date', { ascending: false }),
+          .order('created_at', { ascending: false }),
         supabase
           .from('bookings')
           .select('*')
-          .order('scheduling->date', { ascending: false }),
+          .order('created_at', { ascending: false }),
         supabase
           .from('booking_admin_details')
           .select('booking_id, payment_status, payments')
       ])
 
-      if (customersResponse.error) throw customersResponse.error
-      if (bookingsResponse.error) throw bookingsResponse.error
-      if (adminResponse.error) throw adminResponse.error
+      if (customersResponse.error) {
+        console.error('Error fetching customers:', customersResponse.error)
+        throw new Error(`Failed to fetch customers: ${customersResponse.error.message}`)
+      }
+      if (bookingsResponse.error) {
+        console.error('Error fetching bookings:', bookingsResponse.error)
+        throw new Error(`Failed to fetch bookings: ${bookingsResponse.error.message}`)
+      }
+      if (adminResponse.error) {
+        console.error('Error fetching admin details:', adminResponse.error)
+        throw new Error(`Failed to fetch admin details: ${adminResponse.error.message}`)
+      }
 
       setCustomers(customersResponse.data || [])
       setBookings(bookingsResponse.data || [])
       setAdminDetails(adminResponse.data || [])
 
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('Error fetching data:', error instanceof Error ? error.message : 'Unknown error occurred')
       // You might want to show a toast notification here
     } finally {
       setIsLoading(false)

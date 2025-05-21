@@ -16,18 +16,18 @@ export default async function BookingPage({
     .from('bookings')
     .select(`
       *,
-      customer:customers(*)
+      customers!bookings_customer_id_fkey(*)
     `)
     .eq('id', id)
     .single()
 
   if (bookingError) {
     console.error('Error fetching booking:', bookingError)
-    return <div>Error loading booking details</div>
+    return <div className="p-4 text-gray-600">Booking not found or has been deleted.</div>
   }
 
   if (!booking) {
-    return <div>Booking not found</div>
+    return <div className="p-4 text-gray-600">Booking not found or has been deleted.</div>
   }
 
   // Fetch admin details
@@ -38,8 +38,8 @@ export default async function BookingPage({
     .single()
 
   if (adminError && adminError.code !== 'PGRST116') {
-    console.error('Error fetching admin details:', adminError)
-    return <div>Error loading admin details</div>
+    // Don't show a toast, just render a neutral message
+    return <div className="p-4 text-gray-600">This booking no longer exists or admin details are missing.</div>
   }
 
   return (

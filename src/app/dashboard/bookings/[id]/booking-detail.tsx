@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import ServiceDetails from '@/app/dashboard/bookings/[id]/service-details'
@@ -119,6 +119,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
   const [adminDetails, setAdminDetails] = useState<AdminDetails | null>(initialData?.adminDetails || null)
   const [isLoading, setIsLoading] = useState(!initialData)
   const [showStaffModal, setShowStaffModal] = useState(false)
+  const [isDeleted, setIsDeleted] = useState(false)
   const supabase = createClientComponentClient()
 
   // Restore scroll position on mount (with delay for notification)
@@ -142,10 +143,13 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
     try {
       setIsLoading(true)
 
-      // First fetch booking data
+      // First fetch booking data with customer
       const { data: bookingData, error: bookingError } = await supabase
         .from('bookings')
-        .select('*')
+        .select(`
+          *,
+          customers!bookings_customer_id_fkey(*)
+        `)
         .eq('id', id)
         .single()
 
@@ -156,24 +160,6 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
 
       if (!bookingData) {
         throw new Error('Booking not found')
-      }
-
-      // Fetch customer data using the booking's id (one-way relation, same as listing page)
-      const { data: customerData, error: customerError } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('booking_id', id)
-
-      console.log('Booking ID:', id)
-      console.log('Customer fetch result:', customerData, customerError)
-
-      if (customerError) {
-        console.error('Customer fetch error:', customerError)
-        throw customerError
-      }
-
-      if (!customerData || customerData.length === 0) {
-        throw new Error('Customer not found')
       }
 
       // Fetch service details
@@ -188,11 +174,8 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
         throw serviceError
       }
 
-      // Update state with the fetched data, attach customer as in listing page
-      setBooking({
-        ...bookingData,
-        customer: customerData[0]
-      })
+      // Update state with the fetched data
+      setBooking(bookingData)
       setAdminDetails({
         id: bookingData.id.toString(),
         booking_id: bookingData.id.toString(),
@@ -224,7 +207,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
   }, [id, initialData, fetchBookingDetails])
 
   const fetchAdminDetails = useCallback(async () => {
-    if (!booking) return;
+    if (!booking || isDeleted) return;
 
     try {
       const { data, error } = await supabase
@@ -291,14 +274,17 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
     } catch (err) {
       const error = err as Error
       console.error('Error with admin details:', error)
-      toast.error('Failed to load admin details')
+      if (!isDeleted) {
+        toast.error('Failed to load admin details')
+      }
     }
-  }, [id, supabase, booking])
+  }, [id, supabase, booking, isDeleted])
 
   useEffect(() => {
-    fetchBookingDetails()
-    fetchAdminDetails()
-  }, [fetchBookingDetails, fetchAdminDetails])
+    if (!isDeleted) {
+      fetchAdminDetails()
+    }
+  }, [fetchAdminDetails, isDeleted])
 
   const updateBookingStatus = async (newStatus: FulfillmentStatus) => {
     if (!booking) return;
@@ -412,6 +398,100 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
     }
   }
 
+  const getServiceTable = (type: string): string => {
+    const tableMap: Record<string, string> = {
+      'carpet-cleaning': 'carpet_cleaning_services',
+      'end-of-lease-cleaning': 'end_of_lease_services',
+      'general-cleaning': 'general_cleaning_services',
+      'deep-cleaning': 'deep_cleaning_services',
+      'move-in-cleaning': 'move_in_out_services',
+      'ndis-cleaning': 'ndis_cleaning_services',
+      'commercial-cleaning': 'commercial_cleaning_services',
+      'upholstery-cleaning': 'upholstery_cleaning_services',
+      'window-cleaning': 'window_cleaning_enquiries'
+    }
+    return tableMap[type] || ''
+  }
+
+  const handleDeleteBooking = async () => {
+    if (!booking) return;
+    
+    if (!window.confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Delete related records first
+      const { error: adminError } = await supabase
+        .from('booking_admin_details')
+        .delete()
+        .eq('booking_id', id);
+
+      if (adminError) {
+        console.error('Error deleting admin details:', adminError);
+        throw new Error(`Failed to delete admin details: ${adminError.message}`);
+      }
+
+      // Delete service-specific details if they exist
+      const serviceTable = getServiceTable(booking.service_type);
+      if (serviceTable) {
+        const { error: serviceError } = await supabase
+          .from(serviceTable)
+          .delete()
+          .eq('booking_id', id);
+
+        if (serviceError && serviceError.code !== 'PGRST116') {
+          console.error('Error deleting service details:', serviceError);
+          throw new Error(`Failed to delete service details: ${serviceError.message}`);
+        }
+      }
+
+      // Delete customer record first (due to foreign key constraint)
+      const { error: customerError } = await supabase
+        .from('customers')
+        .delete()
+        .eq('booking_id', id);
+
+      if (customerError) {
+        console.error('Error deleting customer:', customerError);
+        throw new Error(`Failed to delete customer: ${customerError.message}`);
+      }
+
+      // Finally delete the booking
+      const { error: bookingError } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', id);
+
+      if (bookingError) {
+        console.error('Error deleting booking:', bookingError);
+        throw new Error(`Failed to delete booking: ${bookingError.message}`);
+      }
+
+      // Clear local state before navigation
+      setBooking(null);
+      setAdminDetails(null);
+      setIsDeleted(true);
+      
+      // Show success message
+      toast.success('Booking deleted successfully');
+      
+      // Use replace instead of push to prevent back navigation
+      router.replace('/dashboard/bookings');
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      console.error('Error deleting booking:', errorMessage);
+      toast.error(`Failed to delete booking: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isDeleted) return null;
+
   if (isLoading) {
     return <div>Loading...</div>
   }
@@ -442,6 +522,14 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleDeleteBooking}
+            disabled={isLoading}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+            title="Delete Booking"
+          >
+            <TrashIcon className="w-5 h-5" />
+          </button>
           <EmailClientWrapper bookingId={booking.id.toString()} />
           <FulfillmentActions
             currentStatus={booking.status as FulfillmentStatus}
@@ -476,6 +564,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
               <ServiceDetails
                 bookingId={booking.id.toString()}
                 serviceType={booking.service_type}
+                disabled={isDeleted}
               />
             )}
           </div>
@@ -484,7 +573,7 @@ export default function BookingDetail({ id, initialData }: BookingDetailProps) {
         {/* Right Column (Full width on mobile, 1/3 on desktop) */}
         <div className="space-y-6">
           {/* Customer Information */}
-          <CustomerDetail bookingId={booking.id.toString()} />
+          <CustomerDetail bookingId={booking.id.toString()} disabled={isDeleted} />
 
           {/* Payment Section */}
           <div className="bg-white rounded-lg shadow">
