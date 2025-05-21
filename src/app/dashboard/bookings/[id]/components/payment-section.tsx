@@ -256,13 +256,13 @@ export default function PaymentSection({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-gray-500">Original Price</p>
-            <p className="text-lg font-medium">${originalPrice.toFixed(2)}</p>
+            <p className="text-lg font-medium">${(originalPrice ?? 0).toFixed(2)}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Adjusted Price</p>
             <div className="flex items-center space-x-2">
               <p className="text-lg font-medium">
-                ${(adjustedPrice || originalPrice).toFixed(2)}
+                ${((adjustedPrice ?? originalPrice ?? 0)).toFixed(2)}
               </p>
               <button
                 onClick={() => setIsAdjustingPrice(true)}
@@ -276,13 +276,13 @@ export default function PaymentSection({
           <div>
             <p className="text-sm text-gray-500">Total Paid</p>
             <p className="text-lg font-medium text-green-600">
-              ${totalPaid.toFixed(2)}
+              ${(totalPaid ?? 0).toFixed(2)}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Remaining Balance</p>
             <p className="text-lg font-medium text-red-600">
-              ${remainingBalance.toFixed(2)}
+              ${(remainingBalance ?? 0).toFixed(2)}
             </p>
           </div>
         </div>
