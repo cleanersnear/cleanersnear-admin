@@ -33,6 +33,8 @@ const navigation = [
     name: 'Bookings',
     children: [
       { name: 'All Bookings', href: '/dashboard/bookings', icon: CalendarIcon },
+      { name: 'Quick Bookings', href: '/dashboard/quick-bookings', icon: CalendarIcon },
+      { name: 'Airbnb Bookings', href: '/dashboard/airbnb-bookings', icon: CalendarIcon },
       { name: 'Invoices', href: '/dashboard/invoices', icon: DocumentTextIcon },
     ]
   },

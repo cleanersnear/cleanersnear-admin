@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format, isToday, isYesterday, isTomorrow, parseISO } from 'date-fns'
+import { format, isToday, isYesterday, isTomorrow, parseISO, subDays } from 'date-fns'
 import NotificationComponent from './notification/notification'
 
 interface Booking {
@@ -42,17 +42,51 @@ interface BookingCounts {
   tomorrow: number
 }
 
+interface QuickBooking {
+  id: string
+  created_at: string
+}
+
+interface AirbnbCleaningBooking {
+  id: number
+  createdAt: string
+}
+
+interface Quote {
+  id: string
+  created_at: string
+  status: string
+}
+
+interface ContactMessage {
+  id: string
+  created_at: string
+  status: string
+}
+
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [adminDetails, setAdminDetails] = useState<AdminDetail[]>([])
+  const [quickBookings, setQuickBookings] = useState<QuickBooking[]>([])
+  const [airbnbBookings, setAirbnbBookings] = useState<AirbnbCleaningBooking[]>([])
+  const [enquiries, setEnquiries] = useState<Quote[]>([])
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentDateTime, setCurrentDateTime] = useState(new Date())
   const supabase = createClientComponentClient()
 
   const fetchData = useCallback(async () => {
     try {
-      const [customersResponse, bookingsResponse, adminResponse] = await Promise.all([
+      const [
+        customersResponse, 
+        bookingsResponse, 
+        adminResponse,
+        quickBookingsResponse,
+        airbnbBookingsResponse,
+        enquiriesResponse,
+        contactMessagesResponse
+      ] = await Promise.all([
         supabase
           .from('customers')
           .select('id, scheduling')
@@ -63,7 +97,23 @@ export default function DashboardPage() {
           .order('created_at', { ascending: false }),
         supabase
           .from('booking_admin_details')
-          .select('booking_id, payment_status, payments')
+          .select('booking_id, payment_status, payments'),
+        supabase
+          .from('quick_bookings')
+          .select('id, created_at')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('AirbnbCleaningBooking')
+          .select('id, createdAt')
+          .order('createdAt', { ascending: false }),
+        supabase
+          .from('quotes')
+          .select('id, created_at, status')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('contact_messages')
+          .select('id, created_at, status')
+          .order('created_at', { ascending: false })
       ])
 
       if (customersResponse.error) {
@@ -78,10 +128,30 @@ export default function DashboardPage() {
         console.error('Error fetching admin details:', adminResponse.error)
         throw new Error(`Failed to fetch admin details: ${adminResponse.error.message}`)
       }
+      if (quickBookingsResponse.error) {
+        console.error('Error fetching quick bookings:', quickBookingsResponse.error)
+        throw new Error(`Failed to fetch quick bookings: ${quickBookingsResponse.error.message}`)
+      }
+      if (airbnbBookingsResponse.error) {
+        console.error('Error fetching airbnb bookings:', airbnbBookingsResponse.error)
+        throw new Error(`Failed to fetch airbnb bookings: ${airbnbBookingsResponse.error.message}`)
+      }
+      if (enquiriesResponse.error) {
+        console.error('Error fetching enquiries:', enquiriesResponse.error)
+        throw new Error(`Failed to fetch enquiries: ${enquiriesResponse.error.message}`)
+      }
+      if (contactMessagesResponse.error) {
+        console.error('Error fetching contact messages:', contactMessagesResponse.error)
+        throw new Error(`Failed to fetch contact messages: ${contactMessagesResponse.error.message}`)
+      }
 
       setCustomers(customersResponse.data || [])
       setBookings(bookingsResponse.data || [])
       setAdminDetails(adminResponse.data || [])
+      setQuickBookings(quickBookingsResponse.data || [])
+      setAirbnbBookings(airbnbBookingsResponse.data || [])
+      setEnquiries(enquiriesResponse.data || [])
+      setContactMessages(contactMessagesResponse.data || [])
 
     } catch (error) {
       console.error('Error fetching data:', error instanceof Error ? error.message : 'Unknown error occurred')
@@ -118,7 +188,8 @@ export default function DashboardPage() {
 
   const unpaidBookings = bookings.reduce((count, booking) => {
     const adminDetail = adminDetails.find(ad => ad.booking_id === booking.id)
-    if (adminDetail?.payment_status === 'unpaid' || adminDetail?.payment_status === 'partially_paid') {
+    if ((adminDetail?.payment_status === 'unpaid' || adminDetail?.payment_status === 'partially_paid') && 
+        booking.status !== 'cancelled') {
       return count + 1
     }
     return count
@@ -127,6 +198,24 @@ export default function DashboardPage() {
   const unfulfilledBookings = bookings.filter(booking => 
     !['completed', 'cancelled', 'refunded'].includes(booking.status)
   ).length
+
+  // New statistics for the past 7 days
+  const getRecentCount = (items: (QuickBooking | AirbnbCleaningBooking)[], days: number = 7) => {
+    const cutoffDate = subDays(new Date(), days)
+    return items.filter(item => {
+      const dateField = 'created_at' in item ? item.created_at : item.createdAt
+      return new Date(dateField) >= cutoffDate
+    }).length
+  }
+
+  const getNewCount = (items: (Quote | ContactMessage)[]) => {
+    return items.filter(item => item.status === 'new' || !item.status).length
+  }
+
+  const recentQuickBookings = getRecentCount(quickBookings)
+  const recentAirbnbBookings = getRecentCount(airbnbBookings)
+  const newEnquiries = getNewCount(enquiries)
+  const newContactMessages = getNewCount(contactMessages)
 
   if (isLoading) return (
     <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
@@ -177,6 +266,38 @@ export default function DashboardPage() {
           <div className="flex items-baseline">
             <span className="text-2xl sm:text-3xl font-bold text-gray-900">{bookingCounts.tomorrow}</span>
             <span className="ml-2 text-sm text-gray-500">bookings</span>
+          </div>
+        </div>
+      </div>
+
+      {/* New Bookings Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Quick Bookings</h3>
+          <div className="flex items-baseline">
+            <span className="text-2xl sm:text-3xl font-bold text-green-600">{recentQuickBookings}</span>
+            <span className="ml-2 text-sm text-gray-500">past 7 days</span>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Airbnb Bookings</h3>
+          <div className="flex items-baseline">
+            <span className="text-2xl sm:text-3xl font-bold text-purple-600">{recentAirbnbBookings}</span>
+            <span className="ml-2 text-sm text-gray-500">past 7 days</span>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">New Enquiries</h3>
+          <div className="flex items-baseline">
+            <span className="text-2xl sm:text-3xl font-bold text-orange-600">{newEnquiries}</span>
+            <span className="ml-2 text-sm text-gray-500">unread</span>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">New Messages</h3>
+          <div className="flex items-baseline">
+            <span className="text-2xl sm:text-3xl font-bold text-indigo-600">{newContactMessages}</span>
+            <span className="ml-2 text-sm text-gray-500">unread</span>
           </div>
         </div>
       </div>
