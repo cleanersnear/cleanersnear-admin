@@ -18,7 +18,6 @@ export async function middleware(req: NextRequest) {
 
   // Public routes that don't need authentication
   const publicRoutes = ['/auth/login', '/auth/callback', '/']
-  const isPublicRoute = publicRoutes.some(route => req.nextUrl.pathname.startsWith(route))
 
   // If accessing dashboard without session, redirect to login
   if (!session && req.nextUrl.pathname.startsWith('/dashboard')) {
