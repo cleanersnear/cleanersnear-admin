@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/auth-provider'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -12,40 +13,33 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const router = useRouter()
   const supabase = createClientComponentClient()
+  const { user } = useAuth()
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.replace('/dashboard')
+    }
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      // First sign in with password
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (signInError) throw signInError
+      if (error) throw error
 
-      // Verify session was created before redirecting
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError) throw sessionError
-      
-      if (!session) {
-        throw new Error('Failed to establish session')
-      }
-      
       toast.success('Login successful')
-      
-      // Small timeout to ensure cookies are set
-      setTimeout(() => {
-        router.push('/dashboard')
-        // Also use router.refresh to ensure the app picks up the new auth state
-        router.refresh()
-      }, 300)
+      router.replace('/dashboard')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to login'
       toast.error(errorMessage)
+    } finally {
       setIsLoading(false)
     }
   }

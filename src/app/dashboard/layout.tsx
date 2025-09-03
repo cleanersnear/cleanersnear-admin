@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { useAuth } from '@/components/auth-provider'
 import {
   HomeIcon,
   CalendarIcon,
@@ -66,33 +66,38 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const { user, loading, signOut } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) throw error
-        if (!session) {
-          router.replace('/auth/login')
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error)
-        router.replace('/auth/login')
-      }
+    if (!loading && !user) {
+      router.replace('/auth/login')
     }
-    checkAuth()
-  }, [router, supabase])
+  }, [user, loading, router])
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut()
+      await signOut()
       router.replace('/auth/login')
-    } catch {
+    } catch (error) {
+      console.error('Sign out error:', error)
       toast.error('Failed to sign out')
     }
+  }
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
+
+  // Don't render dashboard if not authenticated
+  if (!user) {
+    return null
   }
 
   return (

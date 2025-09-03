@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { Inter } from 'next/font/google'
 import env from '@/utils/env'
+import { AuthProvider } from '@/components/auth-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -52,17 +53,19 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={`${inter.className} h-full`}>
-        <Toaster 
-          position="top-center"
-          toastOptions={{
-            duration: 5000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-          }}
-        />
-        {children}
+        <AuthProvider>
+          <Toaster 
+            position="top-center"
+            toastOptions={{
+              duration: 5000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+            }}
+          />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
