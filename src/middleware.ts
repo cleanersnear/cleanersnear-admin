@@ -16,9 +16,7 @@ export async function middleware(req: NextRequest) {
   // Refresh session if expired
   const { data: { session } } = await supabase.auth.getSession()
 
-  // Public routes that don't need authentication
-  const publicRoutes = ['/auth/login', '/auth/callback', '/']
-
+  
   // If accessing dashboard without session, redirect to login
   if (!session && req.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/auth/login', req.url))
