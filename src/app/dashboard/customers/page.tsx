@@ -6,6 +6,7 @@ import { EllipsisVerticalIcon, UserCircleIcon, ArrowDownTrayIcon, ArrowUpTrayIco
 import { ChevronDownIcon as ChevronDownSolid, ChevronUpIcon as ChevronUpSolid } from '@heroicons/react/24/solid'
 import Papa, { ParseResult } from 'papaparse'
 import { useRouter } from 'next/navigation'
+import { newBookingService } from '@/config/newDatabase'
 
 interface Customer {
   id: string
@@ -27,12 +28,13 @@ interface Customer {
   } | null
   scheduling: {
     date?: string
-    time?: string
+    time?: string | null
     is_flexible_date?: boolean
     is_flexible_time?: boolean
   } | null
   duplicate_count?: number
   related_customers?: Customer[]
+  source?: 'old' | 'new' // Track which database the customer comes from
 }
 
 type CustomerGroup = 'serviced' | 'subscribed' | 'thirdparty'
@@ -76,20 +78,84 @@ export default function CustomersPage() {
   useEffect(() => {
     const fetchCustomers = async () => {
       setIsLoading(true)
-      const [{ data: customersData, error: customersError }, { data: bookingsData }] = await Promise.all([
-        supabase.from('customers').select('*').order('created_at', { ascending: false }),
-        supabase.from('bookings').select('id, booking_number')
-      ])
-      if (!customersError && customersData && bookingsData) {
-        const merged = customersData.map((customer: Customer) => {
-          const booking = bookingsData.find((b: { id: string }) => b.id === customer.booking_id)
-          return { ...customer, booking_number: booking ? booking.booking_number : undefined }
-        })
-        setCustomers(merged)
-        setFilteredCustomers(merged)
+      
+      try {
+        // Fetch from old database
+        const [{ data: customersData, error: customersError }, { data: bookingsData }] = await Promise.all([
+          supabase.from('customers').select('*').order('created_at', { ascending: false }),
+          supabase.from('bookings').select('id, booking_number')
+        ])
+        
+        let oldCustomers: Customer[] = []
+        if (!customersError && customersData && bookingsData) {
+          oldCustomers = customersData.map((customer: Customer) => {
+            const booking = bookingsData.find((b: { id: string }) => b.id === customer.booking_id)
+            return { 
+              ...customer, 
+              booking_number: booking ? booking.booking_number : undefined,
+              source: 'old' as const
+            }
+          })
+        }
+
+        // Fetch from new database
+        let newCustomers: Customer[] = []
+        try {
+          const newBookingsData = await newBookingService.getAllBookings(1000, 0) // Get all customers
+          newCustomers = newBookingsData.map((booking: {
+            id: number;
+            booking_number: string;
+            first_name: string;
+            last_name: string;
+            email: string;
+            phone: string;
+            created_at: string;
+            address: string;
+            suburb: string;
+            postcode: string;
+            notes: string;
+            schedule_date: string;
+          }) => ({
+            id: `new_${booking.id}`,
+            booking_id: booking.booking_number,
+            first_name: booking.first_name,
+            last_name: booking.last_name,
+            email: booking.email,
+            phone: booking.phone,
+            created_at: booking.created_at,
+            booking_number: booking.booking_number,
+            address: {
+              street: booking.address,
+              suburb: booking.suburb,
+              postcode: booking.postcode,
+              instructions: booking.notes
+            },
+            scheduling: {
+              date: booking.schedule_date,
+              time: null,
+              is_flexible_date: false,
+              is_flexible_time: false
+            },
+            source: 'new' as const
+          }))
+        } catch (newError) {
+          console.warn('Could not fetch new customers:', newError)
+        }
+
+        // Combine and sort all customers
+        const allCustomers = [...oldCustomers, ...newCustomers].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+        
+        setCustomers(allCustomers)
+        setFilteredCustomers(allCustomers)
+      } catch (error) {
+        console.error('Error fetching customers:', error)
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoading(false)
     }
+    
     fetchCustomers()
   }, [supabase])
 
@@ -207,12 +273,24 @@ export default function CustomersPage() {
   }
 
   const handleDelete = async (customerId: string) => {
-    const { error } = await supabase.from('customers').delete().eq('id', customerId)
-    if (error) {
-      alert('Error deleting customer: ' + error.message)
-    } else {
+    const customer = customers.find(c => c.id === customerId)
+    if (!customer) return
+
+    try {
+      if (customer.source === 'new') {
+        // For new database customers, we need to delete the booking
+        await newBookingService.deleteBooking(customer.booking_number || '')
+      } else {
+        // For old database customers, delete from customers table
+        const { error } = await supabase.from('customers').delete().eq('id', customerId)
+        if (error) throw error
+      }
+      
       setCustomers(customers.filter(c => c.id !== customerId))
       setDeleteConfirm({ show: false, customerId: null })
+    } catch (error) {
+      console.error('Error deleting customer:', error)
+      alert('Error deleting customer: ' + (error as Error).message)
     }
   }
 
@@ -267,7 +345,13 @@ export default function CustomersPage() {
   }
 
   const handleRowClick = (customer: Customer) => {
-    window.location.href = `/dashboard/customers/${customer.id}`
+    if (customer.source === 'new') {
+      // For new database customers, navigate to new booking details
+      router.push(`/dashboard/new-bookings/${customer.booking_number}`)
+    } else {
+      // For old database customers, navigate to old customer details
+      window.location.href = `/dashboard/customers/${customer.id}`
+    }
   }
 
   return (
@@ -373,7 +457,6 @@ export default function CustomersPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Phone</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Booking Number</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Address</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Scheduling</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
@@ -388,20 +471,27 @@ export default function CustomersPage() {
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-base">
                       {customer.first_name?.charAt(0).toUpperCase()}{customer.last_name?.charAt(0).toUpperCase()}
                     </span>
-                    <span>
-                      {customer.first_name} {customer.last_name}
-                      {customer.duplicate_count ? (
-                        <span 
-                          className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 cursor-pointer hover:bg-blue-200"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowOrders({ show: true, customer });
-                          }}
-                        >
-                          +{customer.duplicate_count} more
-                        </span>
-                      ) : null}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="flex items-center gap-2">
+                        {customer.first_name} {customer.last_name}
+                        {customer.source === 'new' && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                            New System
+                          </span>
+                        )}
+                        {customer.duplicate_count ? (
+                          <span 
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 cursor-pointer hover:bg-blue-200"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowOrders({ show: true, customer });
+                            }}
+                          >
+                            +{customer.duplicate_count} more
+                          </span>
+                        ) : null}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     {customer.email}
@@ -428,15 +518,6 @@ export default function CustomersPage() {
                       </div>
                     ) : 'N/A'}
                   </td>
-                  <td className="px-4 py-3 text-xs">
-                    {customer.scheduling ? (
-                      <div>
-                        {customer.scheduling.date || ''} {customer.scheduling.time || ''}<br/>
-                        {customer.scheduling.is_flexible_date && <span className="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs mr-1">Flexible Date</span>}
-                        {customer.scheduling.is_flexible_time && <span className="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs">Flexible Time</span>}
-                      </div>
-                    ) : 'N/A'}
-                  </td>
                   <td className="px-4 py-3 relative" onClick={e => e.stopPropagation()}>
                     <button
                       className="p-1 rounded-full hover:bg-gray-200 focus:outline-none"
@@ -456,15 +537,28 @@ export default function CustomersPage() {
                         >
                           <UserCircleIcon className="w-4 h-4" /> View
                         </button>
-                        <button
-                          className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => { 
-                            setOpenDropdown(null); 
-                            router.push(`/dashboard/customers/${customer.id}/edit`);
-                          }}
-                        >
-                          <PencilIcon className="w-4 h-4" /> Edit
-                        </button>
+                        {customer.source === 'old' && (
+                          <button
+                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => { 
+                              setOpenDropdown(null); 
+                              router.push(`/dashboard/customers/${customer.id}/edit`);
+                            }}
+                          >
+                            <PencilIcon className="w-4 h-4" /> Edit
+                          </button>
+                        )}
+                        {customer.source === 'new' && (
+                          <button
+                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => { 
+                              setOpenDropdown(null); 
+                              router.push(`/dashboard/new-bookings/${customer.booking_number}/edit`);
+                            }}
+                          >
+                            <PencilIcon className="w-4 h-4" /> Edit
+                          </button>
+                        )}
                         <button
                           className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                           onClick={() => { 

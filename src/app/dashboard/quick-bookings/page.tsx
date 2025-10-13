@@ -123,8 +123,6 @@ export default function QuickBookingsPage() {
     setCurrentPage(1)
   }, [bookings, searchTerm, serviceFilter])
 
-
-
   const getServiceTypeColor = (serviceType: string) => {
     switch (serviceType) {
       case 'general_cleaning':

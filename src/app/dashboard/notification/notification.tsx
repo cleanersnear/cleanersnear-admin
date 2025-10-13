@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { newBookingService } from '@/config/newDatabase'
 
 interface Notification {
     id: string
@@ -12,6 +13,7 @@ interface Notification {
     content: string
     status: 'read' | 'unread'
     booking_id?: string
+    booking_number?: string
     feedback_id?: string
     metadata: {
         customerName?: string
@@ -26,6 +28,7 @@ interface Notification {
         feedbackOption?: string
     }
     created_at: string
+    source?: 'old' | 'new' // Track which database the notification comes from
 }
 
 export default function NotificationComponent() {
@@ -51,29 +54,81 @@ export default function NotificationComponent() {
     // Format unread count
     const formattedUnreadCount = unreadCount > 9 ? '9+' : unreadCount.toString()
 
-    // Fetch notifications
-    const fetchNotifications = useCallback(async () => {
-        try {
-            const { data, error } = await supabase
-                .from('notifications')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(10)
+  // Fetch notifications from both databases
+  const fetchNotifications = useCallback(async () => {
+    try {
+      // Fetch from old database
+      const { data: oldNotifications, error: oldError } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10)
 
-            if (error) throw error
+      if (oldError) throw oldError
 
-            setNotifications(data)
-            setUnreadCount(data.filter(n => n.status === 'unread').length)
-        } catch (error) {
-            console.error('Error fetching notifications:', error)
-        }
-    }, [supabase])
+      // Fetch from new database
+      let newNotifications: Notification[] = []
+      try {
+        const newData = await newBookingService.getAllBookings(10, 0)
+        
+        // Get read status from localStorage for new bookings
+        const readBookings = JSON.parse(localStorage.getItem('readNewBookings') || '[]')
+        
+        newNotifications = newData.map((booking: {
+          id: number;
+          booking_number: string;
+          selected_service: string;
+          first_name: string;
+          last_name: string;
+          created_at: string;
+          schedule_date: string;
+          email: string;
+          phone: string;
+          total_price?: number;
+          pricing?: { totalPrice?: number };
+        }) => ({
+          id: `new_${booking.id}`,
+          type: 'booking',
+          title: 'New Booking Received',
+          content: `New ${booking.selected_service} booking from ${booking.first_name} ${booking.last_name}`,
+          status: readBookings.includes(booking.booking_number) ? 'read' : 'unread',
+          booking_number: booking.booking_number,
+          metadata: {
+            customerName: `${booking.first_name} ${booking.last_name}`,
+            bookingNumber: booking.booking_number,
+            serviceType: booking.selected_service,
+            scheduledDate: booking.schedule_date,
+            customerEmail: booking.email,
+            customerPhone: booking.phone,
+            totalPrice: booking.total_price || booking.pricing?.totalPrice
+          },
+          created_at: booking.created_at,
+          source: 'new'
+        }))
+      } catch (newError) {
+        console.warn('Could not fetch new booking notifications:', newError)
+      }
+
+      // Combine and sort notifications
+      const allNotifications = [
+        ...(oldNotifications || []).map(n => ({ ...n, source: 'old' })),
+        ...newNotifications
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      setNotifications(allNotifications.slice(0, 10))
+      setUnreadCount(allNotifications.filter(n => n.status === 'unread').length)
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    }
+  }, [supabase])
 
     // Handle notification click
     const handleNotificationClick = (notification: Notification) => {
-        // Route based on notification type
+        // Route based on notification type and source
         if (notification.type === 'feedback' && notification.feedback_id) {
             router.push(`/dashboard/feedback/${notification.feedback_id}`)
+        } else if (notification.source === 'new' && notification.booking_number) {
+            router.push(`/dashboard/new-bookings/${notification.booking_number}`)
         } else if (notification.booking_id) {
             router.push(`/dashboard/bookings/${notification.booking_id}`)
         }
@@ -81,26 +136,36 @@ export default function NotificationComponent() {
         setIsOpen(false)
     }
 
-    // Handle mark as read
-    const handleMarkAsRead = async (e: React.MouseEvent, notification: Notification) => {
-        e.stopPropagation() // Prevent triggering the parent click
-        try {
-            const { error } = await supabase
-                .from('notifications')
-                .update({ status: 'read' })
-                .eq('id', notification.id)
+  // Handle mark as read
+  const handleMarkAsRead = async (e: React.MouseEvent, notification: Notification) => {
+    e.stopPropagation() // Prevent triggering the parent click
+    try {
+      // Update old database notifications
+      if (notification.source === 'old') {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ status: 'read' })
+          .eq('id', notification.id)
 
-            if (error) throw error
-
-            // Update local state
-            setNotifications(prev => 
-                prev.map(n => n.id === notification.id ? { ...n, status: 'read' } : n)
-            )
-            setUnreadCount(prev => prev - 1)
-        } catch (error) {
-            console.error('Error marking notification as read:', error)
+        if (error) throw error
+      } else if (notification.source === 'new' && notification.booking_number) {
+        // Store read status in localStorage for new booking notifications
+        const readBookings = JSON.parse(localStorage.getItem('readNewBookings') || '[]')
+        if (!readBookings.includes(notification.booking_number)) {
+          readBookings.push(notification.booking_number)
+          localStorage.setItem('readNewBookings', JSON.stringify(readBookings))
         }
+      }
+
+      // Update local state for both types
+      setNotifications(prev => 
+        prev.map(n => n.id === notification.id ? { ...n, status: 'read' } : n)
+      )
+      setUnreadCount(prev => prev - 1)
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
     }
+  }
 
     // Subscribe to new notifications
     useEffect(() => {
@@ -248,6 +313,11 @@ export default function NotificationComponent() {
                                             {notification.type === 'feedback' && (
                                                 <span className="ml-2 text-xs font-normal px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full">
                                                     Feedback
+                                                </span>
+                                            )}
+                                            {notification.source === 'new' && (
+                                                <span className="ml-2 text-xs font-normal px-2 py-0.5 bg-green-100 text-green-800 rounded-full">
+                                                    New Booking
                                                 </span>
                                             )}
                                         </h4>

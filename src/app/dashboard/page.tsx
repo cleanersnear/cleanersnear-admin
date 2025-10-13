@@ -4,15 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format, isToday, isYesterday, isTomorrow, parseISO, subDays } from 'date-fns'
 import NotificationComponent from './notification/notification'
-
-interface Booking {
-  id: string
-  status: string
-  scheduling: {
-    date: string
-    is_flexible_date: boolean
-  }
-}
+import { newBookingService } from '@/config/newDatabase'
 
 interface Customer {
   id: string
@@ -20,20 +12,6 @@ interface Customer {
     date: string
     is_flexible_date: boolean
   }
-}
-
-interface Payment {
-  amount: number
-  payment_method: string
-  payment_date: string
-  added_by: string
-  notes?: string
-}
-
-interface AdminDetail {
-  booking_id: string
-  payment_status: string
-  payments: Payment[]
 }
 
 interface BookingCounts {
@@ -47,9 +25,11 @@ interface QuickBooking {
   created_at: string
 }
 
-interface AirbnbCleaningBooking {
+interface NewBooking {
   id: number
-  createdAt: string
+  created_at: string
+  schedule_date: string
+  status: string
 }
 
 interface Quote {
@@ -65,11 +45,9 @@ interface ContactMessage {
 }
 
 export default function DashboardPage() {
-  const [bookings, setBookings] = useState<Booking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [adminDetails, setAdminDetails] = useState<AdminDetail[]>([])
   const [quickBookings, setQuickBookings] = useState<QuickBooking[]>([])
-  const [airbnbBookings, setAirbnbBookings] = useState<AirbnbCleaningBooking[]>([])
+  const [newBookings, setNewBookings] = useState<NewBooking[]>([])
   const [enquiries, setEnquiries] = useState<Quote[]>([])
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -83,7 +61,6 @@ export default function DashboardPage() {
         bookingsResponse, 
         adminResponse,
         quickBookingsResponse,
-        airbnbBookingsResponse,
         enquiriesResponse,
         contactMessagesResponse
       ] = await Promise.all([
@@ -103,10 +80,6 @@ export default function DashboardPage() {
           .select('id, created_at')
           .order('created_at', { ascending: false }),
         supabase
-          .from('AirbnbCleaningBooking')
-          .select('id, createdAt')
-          .order('createdAt', { ascending: false }),
-        supabase
           .from('quotes')
           .select('id, created_at, status')
           .order('created_at', { ascending: false }),
@@ -115,6 +88,25 @@ export default function DashboardPage() {
           .select('id, created_at, status')
           .order('created_at', { ascending: false })
       ])
+
+      // Fetch new bookings separately
+      let newBookingsData: NewBooking[] = []
+      try {
+        const newBookingsResponse = await newBookingService.getAllBookings(1000, 0)
+        newBookingsData = newBookingsResponse.map((booking: {
+          id: number;
+          created_at: string;
+          schedule_date: string;
+          status: string;
+        }) => ({
+          id: booking.id,
+          created_at: booking.created_at,
+          schedule_date: booking.schedule_date,
+          status: booking.status
+        }))
+      } catch (newError) {
+        console.warn('Could not fetch new bookings:', newError)
+      }
 
       if (customersResponse.error) {
         console.error('Error fetching customers:', customersResponse.error)
@@ -132,10 +124,6 @@ export default function DashboardPage() {
         console.error('Error fetching quick bookings:', quickBookingsResponse.error)
         throw new Error(`Failed to fetch quick bookings: ${quickBookingsResponse.error.message}`)
       }
-      if (airbnbBookingsResponse.error) {
-        console.error('Error fetching airbnb bookings:', airbnbBookingsResponse.error)
-        throw new Error(`Failed to fetch airbnb bookings: ${airbnbBookingsResponse.error.message}`)
-      }
       if (enquiriesResponse.error) {
         console.error('Error fetching enquiries:', enquiriesResponse.error)
         throw new Error(`Failed to fetch enquiries: ${enquiriesResponse.error.message}`)
@@ -146,10 +134,8 @@ export default function DashboardPage() {
       }
 
       setCustomers(customersResponse.data || [])
-      setBookings(bookingsResponse.data || [])
-      setAdminDetails(adminResponse.data || [])
       setQuickBookings(quickBookingsResponse.data || [])
-      setAirbnbBookings(airbnbBookingsResponse.data || [])
+      setNewBookings(newBookingsData)
       setEnquiries(enquiriesResponse.data || [])
       setContactMessages(contactMessagesResponse.data || [])
 
@@ -172,7 +158,10 @@ export default function DashboardPage() {
   }, [fetchData])
 
   const getBookingsByDate = (): BookingCounts => {
-    return customers.reduce((acc, customer) => {
+    let counts = { yesterday: 0, today: 0, tomorrow: 0 }
+    
+    // Count from old database (customers)
+    counts = customers.reduce((acc, customer) => {
       const schedulingData = customer.scheduling
       if (schedulingData?.date && !schedulingData.is_flexible_date) {
         const scheduledDate = parseISO(schedulingData.date)
@@ -181,30 +170,29 @@ export default function DashboardPage() {
         if (isTomorrow(scheduledDate)) acc.tomorrow++
       }
       return acc
-    }, { yesterday: 0, today: 0, tomorrow: 0 })
+    }, counts)
+    
+    // Count from new database (new bookings)
+    counts = newBookings.reduce((acc, booking) => {
+      if (booking.schedule_date) {
+        const scheduledDate = parseISO(booking.schedule_date)
+        if (isYesterday(scheduledDate)) acc.yesterday++
+        if (isToday(scheduledDate)) acc.today++
+        if (isTomorrow(scheduledDate)) acc.tomorrow++
+      }
+      return acc
+    }, counts)
+    
+    return counts
   }
 
   const bookingCounts = getBookingsByDate()
 
-  const unpaidBookings = bookings.reduce((count, booking) => {
-    const adminDetail = adminDetails.find(ad => ad.booking_id === booking.id)
-    if ((adminDetail?.payment_status === 'unpaid' || adminDetail?.payment_status === 'partially_paid') && 
-        booking.status !== 'cancelled') {
-      return count + 1
-    }
-    return count
-  }, 0)
-
-  const unfulfilledBookings = bookings.filter(booking => 
-    !['completed', 'cancelled', 'refunded'].includes(booking.status)
-  ).length
-
   // New statistics for the past 7 days
-  const getRecentCount = (items: (QuickBooking | AirbnbCleaningBooking)[], days: number = 7) => {
+  const getRecentCount = (items: (QuickBooking | NewBooking)[], days: number = 7) => {
     const cutoffDate = subDays(new Date(), days)
     return items.filter(item => {
-      const dateField = 'created_at' in item ? item.created_at : item.createdAt
-      return new Date(dateField) >= cutoffDate
+      return new Date(item.created_at) >= cutoffDate
     }).length
   }
 
@@ -213,7 +201,7 @@ export default function DashboardPage() {
   }
 
   const recentQuickBookings = getRecentCount(quickBookings)
-  const recentAirbnbBookings = getRecentCount(airbnbBookings)
+  const recentNewBookings = getRecentCount(newBookings)
   const newEnquiries = getNewCount(enquiries)
   const newContactMessages = getNewCount(contactMessages)
 
@@ -280,9 +268,9 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Airbnb Bookings</h3>
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">New Bookings</h3>
           <div className="flex items-baseline">
-            <span className="text-2xl sm:text-3xl font-bold text-purple-600">{recentAirbnbBookings}</span>
+            <span className="text-2xl sm:text-3xl font-bold text-blue-600">{recentNewBookings}</span>
             <span className="ml-2 text-sm text-gray-500">past 7 days</span>
           </div>
         </div>
@@ -294,33 +282,10 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">New Messages</h3>
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Contact Us </h3>
           <div className="flex items-baseline">
             <span className="text-2xl sm:text-3xl font-bold text-indigo-600">{newContactMessages}</span>
             <span className="ml-2 text-sm text-gray-500">unread</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Actions Needed Section */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Actions Needed</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="border rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-500">Unfulfilled Bookings</h3>
-              <div className="mt-2 flex items-baseline">
-                <span className="text-xl sm:text-2xl font-bold text-orange-600">{unfulfilledBookings}</span>
-                <span className="ml-2 text-sm text-gray-500">need attention</span>
-              </div>
-            </div>
-            <div className="border rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-500">Unpaid/Partial Payments</h3>
-              <div className="mt-2 flex items-baseline">
-                <span className="text-xl sm:text-2xl font-bold text-red-600">{unpaidBookings}</span>
-                <span className="ml-2 text-sm text-gray-500">need collection</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

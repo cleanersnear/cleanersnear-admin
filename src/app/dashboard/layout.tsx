@@ -17,7 +17,7 @@ import {
   QuestionMarkCircleIcon,
   ChatBubbleLeftRightIcon,
   ArrowLeftStartOnRectangleIcon as SignOutIcon,
-  DocumentTextIcon,
+  
   Bars3Icon,
   XMarkIcon,
   ArrowLeftIcon,
@@ -32,12 +32,13 @@ const navigation = [
   { 
     name: 'Bookings',
     children: [
-      { name: 'All Bookings', href: '/dashboard/bookings', icon: CalendarIcon },
+      { name: 'New Bookings', href: '/dashboard/new-bookings', icon: CalendarIcon },
+      { name: 'Old Bookings', href: '/dashboard/bookings', icon: CalendarIcon },
       { name: 'Quick Bookings', href: '/dashboard/quick-bookings', icon: CalendarIcon },
-      { name: 'Airbnb Bookings', href: '/dashboard/airbnb-bookings', icon: CalendarIcon },
-      { name: 'Invoices', href: '/dashboard/invoices', icon: DocumentTextIcon },
+      
     ]
   },
+  { name: 'Calendar', href: '/dashboard/calendar', icon: CalendarIcon },
   { name: 'Enquiries', href: '/dashboard/enquiries', icon: InboxIcon },
   { name: 'Customers', href: '/dashboard/customers', icon: UsersIcon },
   { name: 'Staff', href: '/dashboard/staff', icon: UserGroupIcon },
