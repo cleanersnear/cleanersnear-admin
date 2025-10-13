@@ -21,6 +21,7 @@ import {
 import { newBookingService } from '@/config/newDatabase';
 import ServiceDetailsSection from './components/ServiceDetailsSection';
 import CustomerSubDetails from './components/CustomerSubDetails';
+import ConnectTeamButton from './components/ConnectTeamButton';
 
 interface PricingData {
   totalPrice?: number;
@@ -58,6 +59,12 @@ export default function NewBookingDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [serviceDetails, setServiceDetails] = useState<{
+    id: number;
+    duration?: string;
+    special_requests?: string;
+    [key: string]: string | number | boolean | undefined;
+  } | null>(null);
 
   const fetchBookingDetails = useCallback(async () => {
     try {
@@ -71,6 +78,20 @@ export default function NewBookingDetailPage() {
       }
       
       setBooking(bookingData);
+      
+      // Fetch service details if available
+      if (bookingData.service_details_id) {
+        try {
+          const details = await newBookingService.getServiceDetails(
+            bookingData.selected_service, 
+            bookingData.service_details_id
+          );
+          setServiceDetails(details);
+        } catch (detailsError) {
+          console.warn('Could not fetch service details:', detailsError);
+          // Don't set error, service details are optional
+        }
+      }
       
     } catch (err) {
       console.error('Error fetching booking details:', err);
@@ -205,22 +226,25 @@ export default function NewBookingDetailPage() {
                 {booking.status}
               </span>
             </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => router.push(`/dashboard/new-bookings/${booking.booking_number}/edit`)}
-                className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <PencilIcon className="w-4 h-4 mr-2" />
-                Edit
-              </button>
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                <TrashIcon className="w-4 h-4 mr-2" />
-                Delete
-              </button>
-            </div>
+                    <div className="space-y-2">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => router.push(`/dashboard/new-bookings/${booking.booking_number}/edit`)}
+                          className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                          <PencilIcon className="w-4 h-4 mr-2" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setShowDeleteModal(true)}
+                          className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        >
+                          <TrashIcon className="w-4 h-4 mr-2" />
+                          Delete
+                        </button>
+                      </div>
+                      <ConnectTeamButton booking={booking} serviceDetails={serviceDetails || undefined} />
+                    </div>
           </div>
 
           {/* Desktop Header */}
@@ -236,22 +260,26 @@ export default function NewBookingDetailPage() {
               <span className={getStatusBadge(booking.status)}>
                 {booking.status}
               </span>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => router.push(`/dashboard/new-bookings/${booking.booking_number}/edit`)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <PencilIcon className="w-4 h-4 mr-2" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  <TrashIcon className="w-4 h-4 mr-2" />
-                  Delete
-                </button>
-              </div>
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => router.push(`/dashboard/new-bookings/${booking.booking_number}/edit`)}
+                            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          >
+                            <PencilIcon className="w-4 h-4 mr-2" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setShowDeleteModal(true)}
+                            className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          >
+                            <TrashIcon className="w-4 h-4 mr-2" />
+                            Delete
+                          </button>
+                        </div>
+                        <ConnectTeamButton booking={booking} serviceDetails={serviceDetails || undefined} />
+                        
+                      </div>
             </div>
           </div>
         </div>
