@@ -19,6 +19,16 @@ export const newSupabase = createClient(newSupabaseUrl, newSupabaseAnonKey, {
   },
 });
 
+// Legacy/Quick-book database client (old supabase)
+const oldSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const oldSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export const oldSupabase = (oldSupabaseUrl && oldSupabaseAnonKey)
+  ? createClient(oldSupabaseUrl, oldSupabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+  : null;
+
 // Database functions for new booking system
 export const newBookingService = {
   // Get all bookings from normalized structure
