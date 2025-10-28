@@ -20,8 +20,8 @@ export const newSupabase = createClient(newSupabaseUrl, newSupabaseAnonKey, {
 });
 
 // Legacy/Quick-book database client (old supabase)
-const oldSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const oldSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const oldSupabaseUrl = process.env.OLD_NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const oldSupabaseAnonKey = process.env.OLD_NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export const oldSupabase = (oldSupabaseUrl && oldSupabaseAnonKey)
   ? createClient(oldSupabaseUrl, oldSupabaseAnonKey, {
