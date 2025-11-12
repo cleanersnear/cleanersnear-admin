@@ -78,7 +78,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-10 grid w-full gap-4 text-sm text-slate-600 sm:grid-cols-3">
+        <div className="mt-10 hidden w-full gap-4 text-sm text-slate-600 sm:grid sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Bookings</p>
             <p className="mt-2 font-medium text-slate-900">Daily pipeline at a glance.</p>
