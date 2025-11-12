@@ -50,22 +50,22 @@ export default async function TimesheetsPage({ searchParams }: PageProps) {
   const weekStartDate = timesheets.length > 0 ? timesheets[0].week_start_date : null;
 
   return (
-    <main className="min-h-screen px-4 py-10 sm:px-6 lg:px-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+    <main className="min-h-screen px-3 py-6 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 sm:gap-8">
         {/* Header */}
-        <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <header className="flex flex-col gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+            <p className="text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-slate-500 dark:text-slate-400">
               Time Tracking
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+            <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight lg:text-4xl">
               Timesheets
             </h1>
-            <p className="mt-1 text-base text-slate-600 dark:text-slate-300">
+            <p className="mt-1 text-sm sm:text-base text-slate-600 dark:text-slate-300">
               Sync employee hours from Connecteam for accurate payroll tracking.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <Link
               href="/dashboard/payroll"
               className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600"
@@ -76,8 +76,8 @@ export default async function TimesheetsPage({ searchParams }: PageProps) {
         </header>
 
         {/* Controls */}
-        <div className="relative flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-3 sm:gap-4 flex-1">
             {/* Week Filter */}
             {availableWeeks.length > 0 && (
               <WeekSelector 
@@ -102,30 +102,30 @@ export default async function TimesheetsPage({ searchParams }: PageProps) {
           }, 0);
 
           return (
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
-                  Total Employees
+            <div className="grid gap-3 sm:gap-4 grid-cols-3">
+              <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-[10px] sm:text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+                  Employees
                 </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">
+                <p className="mt-1 sm:mt-2 text-xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
                   {timesheets.length}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
-                  Total Week Hours
+              <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-[10px] sm:text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+                  Hours
                 </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">
+                <p className="mt-1 sm:mt-2 text-xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
                   {totalHours.toFixed(1)}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
-                  Total Week Pay
+              <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-[10px] sm:text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+                  Pay
                 </p>
-                <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">
+                <p className="mt-1 sm:mt-2 text-xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
                   ${totalPay.toFixed(2)}
                 </p>
               </div>
@@ -135,12 +135,12 @@ export default async function TimesheetsPage({ searchParams }: PageProps) {
 
         {/* Employee List with Live Timesheet Data */}
         {!errorMessage && employees.length > 0 && (
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="border-b border-slate-100 px-6 py-5 dark:border-slate-800">
-              <h2 className="text-lg font-semibold leading-6">
+          <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="border-b border-slate-100 px-4 py-4 sm:px-6 sm:py-5 dark:border-slate-800">
+              <h2 className="text-base sm:text-lg font-semibold leading-6">
                 {selectedWeek ? `Week of ${new Date(selectedWeek).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "Current Week Hours"}
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                 {timesheets.length > 0 ? `Showing stored timesheet data (${timesheets.length} records)` : "No timesheets found for selected week"}
               </p>
             </div>

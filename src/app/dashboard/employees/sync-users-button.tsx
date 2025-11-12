@@ -134,7 +134,7 @@ export function SyncUsersButton({ employees }: Props) {
       <button
         onClick={fetchConnecteamUsers}
         disabled={isSyncing}
-        className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
+        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
       >
         {isSyncing ? (
           <>
@@ -157,19 +157,19 @@ export function SyncUsersButton({ employees }: Props) {
           />
 
           {/* Modal */}
-          <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                  Match Employees with Connecteam Users
+          <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] sm:w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900 max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 sm:mb-6 flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
+                  Match Employees
                 </h2>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  Found {connecteamUsers.length} users in Connecteam. Match them to your employees.
+                <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+                  Found {connecteamUsers.length} users. Match them to your employees.
                 </p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl"
               >
                 ✕
               </button>
@@ -179,30 +179,30 @@ export function SyncUsersButton({ employees }: Props) {
               {employees.map((employee) => (
                 <div
                   key={employee.id}
-                  className="flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:p-4 dark:border-slate-700 dark:bg-slate-950"
                 >
-                  <div className="flex-1">
-                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate">
                       {employee.name}
                     </p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">
                       {employee.email || "No email"}
                       {employee.connecteam_id && (
                         <span className="ml-2 text-xs text-blue-600">
-                          (Current ID: {employee.connecteam_id})
+                          (ID: {employee.connecteam_id})
                         </span>
                       )}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-500">→</span>
+                    <span className="text-sm text-slate-500 hidden sm:inline">→</span>
                     <select
                       value={matches[employee.id] || ""}
                       onChange={(e) =>
                         setMatches({ ...matches, [employee.id]: e.target.value })
                       }
-                      className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      className="w-full sm:w-auto rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                     >
                      <option value="">Select Connecteam user...</option>
                      {connecteamUsers.map((user) => (

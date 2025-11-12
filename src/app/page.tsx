@@ -15,7 +15,7 @@ export default function Home() {
           <div className="flex flex-1 flex-col gap-6">
             <div className="flex items-center gap-3">
               <Image
-                src="https://www.cleaningprofessionals.com.au/logo.png"
+                src="/logo.png"
                 alt="Cleaning Professionals logo"
                 width={120}
                 height={48}

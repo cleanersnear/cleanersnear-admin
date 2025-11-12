@@ -76,17 +76,17 @@ export default async function PaymentsPage() {
   const employeesWithBalance = allEmployees.filter((s) => s.totalBalance > 0).length;
 
   return (
-    <main className="min-h-screen px-4 py-10 sm:px-6 lg:px-10">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+    <main className="min-h-screen px-3 py-6 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 sm:gap-8">
         {/* Header */}
         <header>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-slate-500 dark:text-slate-400">
             Payment Tracking
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+          <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight lg:text-4xl">
             Payments & Balances
           </h1>
-          <p className="mt-1 text-base text-slate-600 dark:text-slate-300">
+          <p className="mt-1 text-sm sm:text-base text-slate-600 dark:text-slate-300">
             Track outstanding payments, completed pay cycles, and payment history per employee.
           </p>
         </header>
@@ -102,52 +102,52 @@ export default async function PaymentsPage() {
 
         {/* Overall Summary Cards */}
         {!errorMessage && (
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <span className="inline-flex items-center rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-300">
-                Total Outstanding
+          <section className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+            <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-amber-600 dark:text-amber-300">
+                Outstanding
               </span>
-              <p className="mt-4 text-3xl font-semibold tracking-tight text-amber-600 dark:text-amber-400">
+              <p className="mt-3 sm:mt-4 text-xl sm:text-3xl font-semibold tracking-tight text-amber-600 dark:text-amber-400">
                 ${grandTotalBalance.toFixed(2)}
               </p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Across {employeesWithBalance} employee{employeesWithBalance !== 1 ? "s" : ""}
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                {employeesWithBalance} employee{employeesWithBalance !== 1 ? "s" : ""}
               </p>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
-                Total Paid
+            <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+                Paid
               </span>
-              <p className="mt-4 text-3xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
+              <p className="mt-3 sm:mt-4 text-xl sm:text-3xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
                 ${grandTotalPaid.toFixed(2)}
               </p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                All-time payments
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                All-time
               </p>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <span className="inline-flex items-center rounded-full bg-slate-500/10 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Total Owed
+            <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-300">
+                Owed
               </span>
-              <p className="mt-4 text-3xl font-semibold tracking-tight">
+              <p className="mt-3 sm:mt-4 text-xl sm:text-3xl font-semibold tracking-tight">
                 ${grandTotalOwed.toFixed(2)}
               </p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Cumulative payroll
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Cumulative
               </p>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <span className="inline-flex items-center rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-300">
-                Active Employees
+            <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-blue-600 dark:text-blue-300">
+                Active
               </span>
-              <p className="mt-4 text-3xl font-semibold tracking-tight">
+              <p className="mt-3 sm:mt-4 text-xl sm:text-3xl font-semibold tracking-tight">
                 {allEmployees.length}
               </p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                With payroll records
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Employees
               </p>
             </div>
           </section>
