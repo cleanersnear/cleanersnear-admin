@@ -138,7 +138,13 @@ export default function CalendarPage() {
 
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
-  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd })
+  
+  // Get the start of the calendar grid (previous month padding)
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 }) // 0 = Sunday
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 })
+  
+  // Get all days to display in the calendar grid
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd })
 
   // Get bookings for a specific date
   const getBookingsForDate = (date: Date) => {
@@ -257,6 +263,15 @@ export default function CalendarPage() {
             <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
               View all bookings from new system and quick bookings
             </p>
+            {/* Today's Date */}
+            <div className="mt-2 sm:mt-3 flex items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-blue-900">
+                  Today: {format(new Date(), 'EEEE, MMMM d, yyyy')}
+                </span>
+              </div>
+            </div>
           </div>
           
           {/* View Toggle */}
@@ -328,28 +343,29 @@ export default function CalendarPage() {
 
               {/* Calendar days */}
               <div className="grid grid-cols-7 gap-1">
-                {monthDays.map((day) => {
+                {calendarDays.map((day) => {
                   const dayBookings = getBookingsForDate(day)
                   const isCurrentMonth = isSameMonth(day, currentDate)
-                  const isToday = isSameDay(day, new Date())
+                  const isTodayDate = isSameDay(day, new Date())
                   const isSelected = selectedDate && isSameDay(day, selectedDate)
 
                   return (
                     <div
                       key={day.toISOString()}
                       className={`
-                        min-h-[60px] sm:min-h-[80px] lg:min-h-[100px] p-1 border border-gray-200 cursor-pointer hover:bg-gray-50 touch-manipulation
-                        ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
-                        ${isToday ? 'bg-blue-50 border-blue-200' : ''}
-                        ${isSelected ? 'bg-indigo-50 border-indigo-200' : ''}
+                        min-h-[60px] sm:min-h-[80px] lg:min-h-[100px] p-1 border cursor-pointer hover:bg-gray-50 touch-manipulation transition-colors
+                        ${!isCurrentMonth ? 'bg-gray-50 text-gray-400 border-gray-200' : 'bg-white border-gray-200'}
+                        ${isTodayDate ? 'bg-blue-50 border-2 border-blue-500 shadow-md ring-2 ring-blue-200' : ''}
+                        ${isSelected && !isTodayDate ? 'bg-indigo-50 border-indigo-200' : ''}
                       `}
                       onClick={() => setSelectedDate(day)}
                     >
                       <div className={`
-                        text-xs sm:text-sm font-medium mb-1
-                        ${isToday ? 'text-blue-600' : ''}
-                        ${isSelected ? 'text-indigo-600' : ''}
+                        text-xs sm:text-sm font-bold mb-1 flex items-center gap-1
+                        ${isTodayDate ? 'text-blue-700' : ''}
+                        ${isSelected && !isTodayDate ? 'text-indigo-600' : ''}
                       `}>
+                        {isTodayDate && <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>}
                         {format(day, 'd')}
                       </div>
                       
@@ -498,28 +514,56 @@ export default function CalendarPage() {
           </div>
 
           {groupBookingsByDate().length > 0 ? (
-            groupBookingsByDate().map(([dateKey, dateBookings]) => (
-              <div key={dateKey} className="bg-white rounded-lg shadow">
-                <div className="p-4 sm:p-6">
-                  {/* Date Header */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex flex-col items-center">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {format(new Date(dateKey), 'd')}
+            groupBookingsByDate().map(([dateKey, dateBookings]) => {
+              const isDateToday = isToday(new Date(dateKey))
+              
+              return (
+                <div 
+                  key={dateKey} 
+                  className={`rounded-lg shadow transition-all ${
+                    isDateToday 
+                      ? 'bg-blue-50 border-2 border-blue-300 ring-2 ring-blue-200' 
+                      : 'bg-white'
+                  }`}
+                >
+                  <div className="p-4 sm:p-6">
+                    {/* Date Header */}
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className={`flex flex-col items-center ${
+                        isDateToday ? 'relative' : ''
+                      }`}>
+                        {isDateToday && (
+                          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>
+                        )}
+                        <div className={`text-2xl font-bold ${
+                          isDateToday ? 'text-blue-700' : 'text-gray-900'
+                        }`}>
+                          {format(new Date(dateKey), 'd')}
+                        </div>
+                        <div className={`text-xs font-medium uppercase ${
+                          isDateToday ? 'text-blue-600' : 'text-gray-500'
+                        }`}>
+                          {format(new Date(dateKey), 'EEE')}
+                        </div>
                       </div>
-                      <div className="text-xs font-medium text-gray-500 uppercase">
-                        {format(new Date(dateKey), 'EEE')}
+                      <div className="flex-1">
+                        <h3 className={`text-lg font-semibold flex items-center gap-2 ${
+                          isDateToday ? 'text-blue-900' : 'text-gray-900'
+                        }`}>
+                          {getDateLabel(dateKey)}
+                          {isDateToday && (
+                            <span className="px-2 py-0.5 text-xs font-bold bg-blue-600 text-white rounded-full">
+                              TODAY
+                            </span>
+                          )}
+                        </h3>
+                        <p className={`text-sm ${
+                          isDateToday ? 'text-blue-700' : 'text-gray-500'
+                        }`}>
+                          {dateBookings.length} {dateBookings.length === 1 ? 'booking' : 'bookings'}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {getDateLabel(dateKey)}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {dateBookings.length} {dateBookings.length === 1 ? 'booking' : 'bookings'}
-                      </p>
-                    </div>
-                  </div>
 
                   {/* Bookings List */}
                   <div className="space-y-3">
@@ -561,7 +605,8 @@ export default function CalendarPage() {
                   </div>
                 </div>
               </div>
-            ))
+              )
+            })
           ) : (
             <div className="bg-white rounded-lg shadow p-8 text-center">
               <div className="flex flex-col items-center">
