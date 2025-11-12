@@ -11,6 +11,7 @@ import {
   DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline';
 import { newBookingService } from '@/config/newDatabase';
+import ServiceDetailsEditor from './ServiceDetailsEditor';
 
 interface PricingData {
   totalPrice?: number;
@@ -35,6 +36,7 @@ interface BookingDetail {
   total_price?: number;
   pricing?: PricingData;
   service_details_id: number;
+  customer_id: string;
 }
 
 const STATUS_OPTIONS = [
@@ -123,11 +125,71 @@ export default function EditBookingPage() {
       setError(null);
       setSaveMessage(null);
       
-      // Update booking status
-      await newBookingService.updateBookingStatus(bookingNumber, formData.status);
-      
-      // TODO: Add customer details update functionality
-      // For now, we'll just update the status
+      if (!booking) {
+        setError('Booking data not available');
+        return;
+      }
+
+      // Update all booking fields in parallel
+      const updatePromises = [];
+
+      // 1. Update booking status
+      updatePromises.push(
+        newBookingService.updateBookingStatus(bookingNumber, formData.status)
+      );
+
+      // 2. Update schedule date if changed
+      const currentScheduleDate = booking.schedule_date ? booking.schedule_date.split('T')[0] : '';
+      if (formData.schedule_date && formData.schedule_date !== currentScheduleDate) {
+        console.log('Updating schedule date:', {
+          old: booking.schedule_date,
+          new: formData.schedule_date,
+          bookingNumber
+        });
+        updatePromises.push(
+          newBookingService.updateBookingSchedule(bookingNumber, formData.schedule_date)
+        );
+      }
+
+      // 3. Update customer details (using the booking's customer_id)
+      const customerUpdates: {
+        first_name?: string;
+        last_name?: string;
+        email?: string;
+        phone?: string;
+        address?: string;
+        suburb?: string;
+        postcode?: string;
+      } = {};
+
+      if (formData.first_name !== booking.first_name) customerUpdates.first_name = formData.first_name;
+      if (formData.last_name !== booking.last_name) customerUpdates.last_name = formData.last_name;
+      if (formData.email !== booking.email) customerUpdates.email = formData.email;
+      if (formData.phone !== booking.phone) customerUpdates.phone = formData.phone;
+      if (formData.address !== booking.address) customerUpdates.address = formData.address;
+      if (formData.suburb !== (booking.suburb || '')) customerUpdates.suburb = formData.suburb;
+      if (formData.postcode !== (booking.postcode || '')) customerUpdates.postcode = formData.postcode;
+
+      if (Object.keys(customerUpdates).length > 0 && booking.customer_id) {
+        updatePromises.push(
+          newBookingService.updateCustomerDetails(booking.customer_id, customerUpdates)
+        );
+      }
+
+      // 4. Update notes if changed
+      if (formData.notes !== (booking.notes || '')) {
+        console.log('Updating notes:', {
+          old: booking.notes,
+          new: formData.notes,
+          bookingNumber
+        });
+        updatePromises.push(
+          newBookingService.updateBookingNotes(bookingNumber, formData.notes)
+        );
+      }
+
+      // Execute all updates
+      await Promise.all(updatePromises);
       
       setSaveMessage('Booking updated successfully!');
       setTimeout(() => setSaveMessage(null), 3000);
@@ -418,11 +480,10 @@ export default function EditBookingPage() {
           </div>
         </div>
 
-        {/* Service Information (Read-only) */}
+        {/* Service Information (Read-only summary) */}
         <div className="mt-6 bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900">Service Information</h3>
-            <p className="text-sm text-gray-500">Service details cannot be modified after booking creation</p>
           </div>
           
           <div className="px-6 py-6">
@@ -460,6 +521,18 @@ export default function EditBookingPage() {
             </dl>
           </div>
         </div>
+
+        {/* Service Details Editor - Editable service-specific fields */}
+        {booking.service_details_id && booking.customer_id && (
+          <div className="mt-6">
+            <ServiceDetailsEditor
+              serviceType={booking.selected_service}
+              serviceDetailsId={booking.service_details_id}
+              customerId={booking.customer_id}
+              onUpdate={fetchBookingDetails}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

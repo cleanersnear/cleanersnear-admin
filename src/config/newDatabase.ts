@@ -1,4 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
+import { 
+  getServiceTableName, 
+  
+  getCustomerDetailTableName,
+  requiresCustomerDetails 
+} from '@/types/booking-services';
 
 // New booking system database configuration
 // Uses NEW_* environment variables for the normalized booking database
@@ -63,20 +69,38 @@ export const newBookingService = {
   // Get booking by booking number
   async getBookingByNumber(bookingNumber: string) {
     try {
-      const { data, error } = await newSupabase
-        .from('complete_bookings')
-        .select('*')
+      // First try to get from the bookings table to get the customer_id
+      const { data: bookingData, error: bookingError } = await newSupabase
+        .from('bookings')
+        .select('*, customers(*)')
         .eq('booking_number', bookingNumber)
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
+      if (bookingError) {
+        if (bookingError.code === 'PGRST116') {
           return null; // No booking found
         }
-        throw error;
+        throw bookingError;
       }
 
-      return data;
+      // Flatten the customer data into the booking object for compatibility
+      if (bookingData && bookingData.customers) {
+        const customer = Array.isArray(bookingData.customers) ? bookingData.customers[0] : bookingData.customers;
+        return {
+          ...bookingData,
+          first_name: customer.first_name,
+          last_name: customer.last_name,
+          email: customer.email,
+          phone: customer.phone,
+          address: customer.address,
+          suburb: customer.suburb,
+          postcode: customer.postcode,
+          schedule_date: customer.schedule_date, // Fetch from customers table
+          notes: customer.notes, // Fetch from customers table
+        };
+      }
+
+      return bookingData;
     } catch (error) {
       console.error('Failed to fetch booking by number:', error);
       throw error;
@@ -142,33 +166,124 @@ export const newBookingService = {
     }
   },
 
+  // Update booking schedule date
+  async updateBookingSchedule(bookingNumber: string, scheduleDate: string) {
+    try {
+      // First get the booking to find the customer_id
+      const { data: booking, error: bookingError } = await newSupabase
+        .from('bookings')
+        .select('customer_id')
+        .eq('booking_number', bookingNumber)
+        .single();
+
+      if (bookingError) {
+        console.error('Error fetching booking for schedule update:', bookingError);
+        throw bookingError;
+      }
+
+      if (!booking || !booking.customer_id) {
+        throw new Error('Booking or customer_id not found');
+      }
+
+      // Update the schedule_date in the customers table (it's a date field there)
+      const { data, error } = await newSupabase
+        .from('customers')
+        .update({ schedule_date: scheduleDate })
+        .eq('id', booking.customer_id)
+        .select();
+
+      if (error) {
+        console.error('Error updating schedule date in customers table:', error, {
+          bookingNumber,
+          customerId: booking.customer_id,
+          scheduleDate,
+          errorDetails: JSON.stringify(error)
+        });
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Failed to update booking schedule:', error);
+      throw error;
+    }
+  },
+
+  // Update customer details
+  async updateCustomerDetails(customerId: string | number, customerData: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    suburb?: string;
+    postcode?: string;
+  }) {
+    try {
+      const { data, error } = await newSupabase
+        .from('customers')
+        .update(customerData)
+        .eq('id', customerId)
+        .select();
+
+      if (error) {
+        console.error('Error updating customer details:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Failed to update customer details:', error);
+      throw error;
+    }
+  },
+
+  // Update booking notes
+  async updateBookingNotes(bookingNumber: string, notes: string) {
+    try {
+      // First get the booking to find the customer_id
+      const { data: booking, error: bookingError } = await newSupabase
+        .from('bookings')
+        .select('customer_id')
+        .eq('booking_number', bookingNumber)
+        .single();
+
+      if (bookingError) {
+        console.error('Error fetching booking for notes update:', bookingError);
+        throw bookingError;
+      }
+
+      if (!booking || !booking.customer_id) {
+        throw new Error('Booking or customer_id not found');
+      }
+
+      // Update the notes in the customers table
+      const { data, error } = await newSupabase
+        .from('customers')
+        .update({ notes })
+        .eq('id', booking.customer_id)
+        .select();
+
+      if (error) {
+        console.error('Error updating notes in customers table:', error, {
+          bookingNumber,
+          customerId: booking.customer_id,
+          errorDetails: JSON.stringify(error)
+        });
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Failed to update booking notes:', error);
+      throw error;
+    }
+  },
+
   // Get service-specific details
   async getServiceDetails(serviceType: string, serviceDetailsId: number) {
     try {
-      let tableName;
-      
-      switch (serviceType) {
-        case 'Regular Cleaning':
-          tableName = 'regular_cleaning_details';
-          break;
-        case 'Once-Off Cleaning':
-          tableName = 'once_off_cleaning_details';
-          break;
-        case 'NDIS Cleaning':
-          tableName = 'ndis_cleaning_details';
-          break;
-        case 'End of Lease Cleaning':
-          tableName = 'end_of_lease_cleaning_details';
-          break;
-        case 'Airbnb Cleaning':
-          tableName = 'airbnb_cleaning_details';
-          break;
-        case 'Commercial Cleaning':
-          tableName = 'commercial_cleaning_details';
-          break;
-        default:
-          throw new Error(`Unknown service type: ${serviceType}`);
-      }
+      const tableName = getServiceTableName(serviceType);
 
       const { data, error } = await newSupabase
         .from(tableName)
@@ -204,6 +319,105 @@ export const newBookingService = {
       };
     } catch (error) {
       console.error('Failed to fetch customer sub-details:', error);
+      throw error;
+    }
+  },
+
+  // Get specific customer detail extension based on service type (optimized - only queries needed table)
+  async getCustomerDetailExtension(customerId: string | number, serviceType: string) {
+    try {
+      // Check if this service type requires customer detail extension
+      if (!requiresCustomerDetails(serviceType)) {
+        return null;
+      }
+
+      const tableName = getCustomerDetailTableName(serviceType);
+      if (!tableName) {
+        return null;
+      }
+
+      const { data, error } = await newSupabase
+        .from(tableName)
+        .select('*')
+        .eq('customer_id', customerId)
+        .single();
+
+      if (error) {
+        // It's okay if no record exists - some customers may not have filled out these details
+        if (error.code === 'PGRST116') {
+          console.log(`No ${tableName} found for customer ${customerId}`);
+          return null;
+        }
+        console.error(`Error fetching ${tableName}:`, error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch customer detail extension:', error);
+      return null;
+    }
+  },
+
+  // Update service-specific details
+  async updateServiceDetails(
+    serviceType: string, 
+    serviceDetailsId: string | number, 
+    updates: Record<string, unknown>
+  ) {
+    try {
+      const tableName = getServiceTableName(serviceType);
+
+      const { data, error } = await newSupabase
+        .from(tableName)
+        .update(updates)
+        .eq('id', serviceDetailsId)
+        .select();
+
+      if (error) {
+        console.error(`Error updating ${tableName}:`, error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Failed to update service details:', error);
+      throw error;
+    }
+  },
+
+  // Update customer detail extension (NDIS, Commercial, End of Lease)
+  async updateCustomerDetailExtension(
+    serviceType: string,
+    customerId: string | number,
+    updates: Record<string, unknown>
+  ) {
+    try {
+      // Check if this service type requires customer detail extension
+      if (!requiresCustomerDetails(serviceType)) {
+        console.log(`Service type ${serviceType} does not require customer detail extension`);
+        return null;
+      }
+
+      const tableName = getCustomerDetailTableName(serviceType);
+      if (!tableName) {
+        return null;
+      }
+
+      const { data, error } = await newSupabase
+        .from(tableName)
+        .update(updates)
+        .eq('customer_id', customerId)
+        .select();
+
+      if (error) {
+        console.error(`Error updating ${tableName}:`, error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Failed to update customer detail extension:', error);
       throw error;
     }
   },
@@ -323,18 +537,14 @@ export const newBookingService = {
       await newSupabase.from('customer_end_of_lease_details').delete().eq('customer_id', booking.customer_id);
 
       // 3. Delete service-specific details
-      const serviceTableMap: { [key: string]: string } = {
-        'Regular Cleaning': 'regular_cleaning_details',
-        'Once-Off Cleaning': 'once_off_cleaning_details',
-        'NDIS Cleaning': 'ndis_cleaning_details',
-        'End of Lease Cleaning': 'end_of_lease_cleaning_details',
-        'Airbnb Cleaning': 'airbnb_cleaning_details',
-        'Commercial Cleaning': 'commercial_cleaning_details',
-      };
-      
-      const serviceTable = serviceTableMap[booking.selected_service];
-      if (serviceTable && booking.service_details_id) {
-        await newSupabase.from(serviceTable).delete().eq('id', booking.service_details_id);
+      try {
+        const serviceTable = getServiceTableName(booking.selected_service);
+        if (serviceTable && booking.service_details_id) {
+          await newSupabase.from(serviceTable).delete().eq('id', booking.service_details_id);
+        }
+      } catch (serviceError) {
+        console.warn('Could not delete service details:', serviceError);
+        // Continue with deletion even if service details fail
       }
 
       // 4. Delete the main booking
