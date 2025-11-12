@@ -6,14 +6,6 @@ import { format, isToday, isYesterday, isTomorrow, parseISO, subDays } from 'dat
 import NotificationComponent from './notification/notification'
 import { newBookingService } from '@/config/newDatabase'
 
-interface Customer {
-  id: string
-  scheduling: {
-    date: string
-    is_flexible_date: boolean
-  }
-}
-
 interface BookingCounts {
   yesterday: number
   today: number
@@ -32,12 +24,6 @@ interface NewBooking {
   status: string
 }
 
-interface Quote {
-  id: string
-  created_at: string
-  status: string
-}
-
 interface ContactMessage {
   id: string
   created_at: string
@@ -45,10 +31,8 @@ interface ContactMessage {
 }
 
 export default function DashboardPage() {
-  const [customers, setCustomers] = useState<Customer[]>([])
   const [quickBookings, setQuickBookings] = useState<QuickBooking[]>([])
   const [newBookings, setNewBookings] = useState<NewBooking[]>([])
-  const [enquiries, setEnquiries] = useState<Quote[]>([])
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentDateTime, setCurrentDateTime] = useState(new Date())
@@ -57,31 +41,12 @@ export default function DashboardPage() {
   const fetchData = useCallback(async () => {
     try {
       const [
-        customersResponse, 
-        bookingsResponse, 
-        adminResponse,
         quickBookingsResponse,
-        enquiriesResponse,
         contactMessagesResponse
       ] = await Promise.all([
         supabase
-          .from('customers')
-          .select('id, scheduling')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('bookings')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('booking_admin_details')
-          .select('booking_id, payment_status, payments'),
-        supabase
           .from('quick_bookings')
           .select('id, created_at')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('quotes')
-          .select('id, created_at, status')
           .order('created_at', { ascending: false }),
         supabase
           .from('contact_messages')
@@ -108,35 +73,17 @@ export default function DashboardPage() {
         console.warn('Could not fetch new bookings:', newError)
       }
 
-      if (customersResponse.error) {
-        console.error('Error fetching customers:', customersResponse.error)
-        throw new Error(`Failed to fetch customers: ${customersResponse.error.message}`)
-      }
-      if (bookingsResponse.error) {
-        console.error('Error fetching bookings:', bookingsResponse.error)
-        throw new Error(`Failed to fetch bookings: ${bookingsResponse.error.message}`)
-      }
-      if (adminResponse.error) {
-        console.error('Error fetching admin details:', adminResponse.error)
-        throw new Error(`Failed to fetch admin details: ${adminResponse.error.message}`)
-      }
       if (quickBookingsResponse.error) {
         console.error('Error fetching quick bookings:', quickBookingsResponse.error)
         throw new Error(`Failed to fetch quick bookings: ${quickBookingsResponse.error.message}`)
-      }
-      if (enquiriesResponse.error) {
-        console.error('Error fetching enquiries:', enquiriesResponse.error)
-        throw new Error(`Failed to fetch enquiries: ${enquiriesResponse.error.message}`)
       }
       if (contactMessagesResponse.error) {
         console.error('Error fetching contact messages:', contactMessagesResponse.error)
         throw new Error(`Failed to fetch contact messages: ${contactMessagesResponse.error.message}`)
       }
 
-      setCustomers(customersResponse.data || [])
       setQuickBookings(quickBookingsResponse.data || [])
       setNewBookings(newBookingsData)
-      setEnquiries(enquiriesResponse.data || [])
       setContactMessages(contactMessagesResponse.data || [])
 
     } catch (error) {
@@ -159,18 +106,6 @@ export default function DashboardPage() {
 
   const getBookingsByDate = (): BookingCounts => {
     let counts = { yesterday: 0, today: 0, tomorrow: 0 }
-    
-    // Count from old database (customers)
-    counts = customers.reduce((acc, customer) => {
-      const schedulingData = customer.scheduling
-      if (schedulingData?.date && !schedulingData.is_flexible_date) {
-        const scheduledDate = parseISO(schedulingData.date)
-        if (isYesterday(scheduledDate)) acc.yesterday++
-        if (isToday(scheduledDate)) acc.today++
-        if (isTomorrow(scheduledDate)) acc.tomorrow++
-      }
-      return acc
-    }, counts)
     
     // Count from new database (new bookings)
     counts = newBookings.reduce((acc, booking) => {
@@ -196,13 +131,12 @@ export default function DashboardPage() {
     }).length
   }
 
-  const getNewCount = (items: (Quote | ContactMessage)[]) => {
+  const getNewCount = (items: Array<{ status: string | null | undefined }>) => {
     return items.filter(item => item.status === 'new' || !item.status).length
   }
 
   const recentQuickBookings = getRecentCount(quickBookings)
   const recentNewBookings = getRecentCount(newBookings)
-  const newEnquiries = getNewCount(enquiries)
   const newContactMessages = getNewCount(contactMessages)
 
   if (isLoading) return (
@@ -259,7 +193,7 @@ export default function DashboardPage() {
       </div>
 
       {/* New Bookings Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Quick Bookings</h3>
           <div className="flex items-baseline">
@@ -272,13 +206,6 @@ export default function DashboardPage() {
           <div className="flex items-baseline">
             <span className="text-2xl sm:text-3xl font-bold text-blue-600">{recentNewBookings}</span>
             <span className="ml-2 text-sm text-gray-500">past 7 days</span>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">New Enquiries</h3>
-          <div className="flex items-baseline">
-            <span className="text-2xl sm:text-3xl font-bold text-orange-600">{newEnquiries}</span>
-            <span className="ml-2 text-sm text-gray-500">unread</span>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-4 sm:p-6">

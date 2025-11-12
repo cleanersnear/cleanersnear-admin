@@ -10,7 +10,6 @@ import {
   CalendarIcon,
   UsersIcon,
   UserGroupIcon,
-  InboxIcon,
   BriefcaseIcon,
   NewspaperIcon,
   RssIcon,
@@ -33,15 +32,15 @@ const navigation = [
     name: 'Bookings',
     children: [
       { name: 'New Bookings', href: '/dashboard/new-bookings', icon: CalendarIcon },
-      { name: 'Old Bookings', href: '/dashboard/bookings', icon: CalendarIcon },
       { name: 'Quick Bookings', href: '/dashboard/quick-bookings', icon: CalendarIcon },
       
     ]
   },
   { name: 'Calendar', href: '/dashboard/calendar', icon: CalendarIcon },
-  { name: 'Enquiries', href: '/dashboard/enquiries', icon: InboxIcon },
   { name: 'Customers', href: '/dashboard/customers', icon: UsersIcon },
-  { name: 'Staff', href: '/dashboard/staff', icon: UserGroupIcon },
+  { name: 'Employees', href: '/dashboard/employees', icon: UserGroupIcon },
+  { name: 'Payroll', href: '/dashboard/payroll', icon: BriefcaseIcon },
+  { name: 'Payments', href: '/dashboard/payments', icon: FolderIcon },
   { 
     name: 'Content Management',
     children: [

@@ -10,11 +10,6 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: "Cleaning Professionals - Admin Dashboard",
   description: "Admin dashboard for managing Cleaning Professionals services",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
   icons: {
     icon: [
       {
@@ -43,6 +38,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: env.adminUrl as string,
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
