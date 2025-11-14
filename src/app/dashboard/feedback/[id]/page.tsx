@@ -88,9 +88,9 @@ export default function FeedbackDetailPage() {
   const renderRatingStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       i < rating ? (
-        <StarIconSolid key={i} className="w-6 h-6 text-yellow-400" />
+        <StarIconSolid key={i} className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-yellow-400" />
       ) : (
-        <StarIcon key={i} className="w-6 h-6 text-gray-300" />
+        <StarIcon key={i} className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-300" />
       )
     ));
   };
@@ -123,12 +123,18 @@ export default function FeedbackDetailPage() {
   };
 
   if (isLoading) {
-    return <div className="p-4">Loading feedback details...</div>;
+    return (
+      <div className="px-4 py-8 sm:px-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+        </div>
+      </div>
+    );
   }
 
   if (!feedback) {
     return (
-      <div className="text-center py-12">
+      <div className="px-4 py-8 sm:px-6 text-center">
         <h3 className="text-lg font-medium text-gray-900">Feedback not found</h3>
         <p className="mt-2 text-sm text-gray-500">
           The feedback you&apos;re looking for does not exist or has been removed.
@@ -147,39 +153,39 @@ export default function FeedbackDetailPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="mb-6">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
+      <div className="mb-4 sm:mb-6">
         <button 
           onClick={() => router.back()} 
-          className="inline-flex items-center px-3 py-1.5 border border-gray-300 
+          className="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 border border-gray-300 
                   text-sm font-medium rounded-md text-gray-700 bg-white 
                   hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          <ArrowLeftIcon className="-ml-1 mr-1 h-5 w-5" aria-hidden="true" />
+          <ArrowLeftIcon className="-ml-1 mr-2 h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
           Back to Feedback List
         </button>
       </div>
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
+      <div className="bg-white shadow overflow-hidden rounded-lg">
+        <div className="px-4 py-4 sm:px-6 sm:py-5">
+          <h3 className="text-base sm:text-lg leading-6 font-medium text-gray-900">
             Feedback Details
           </h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
+          <p className="mt-1 max-w-2xl text-xs sm:text-sm text-gray-500">
             Detailed view of customer feedback
           </p>
         </div>
         
-        <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-          <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+        <div className="border-t border-gray-200 px-4 py-4 sm:px-6 sm:py-5">
+          <dl className="grid grid-cols-1 gap-4 sm:gap-x-4 sm:gap-y-6 sm:grid-cols-2">
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500">Booking Number</dt>
-              <dd className="mt-1 text-sm text-gray-900">{renderBookingNumber()}</dd>
+              <dt className="text-xs sm:text-sm font-medium text-gray-500">Booking Number</dt>
+              <dd className="mt-1 text-sm sm:text-base text-gray-900 break-words">{renderBookingNumber()}</dd>
             </div>
             
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500">Date Submitted</dt>
-              <dd className="mt-1 text-sm text-gray-900">
+              <dt className="text-xs sm:text-sm font-medium text-gray-500">Date Submitted</dt>
+              <dd className="mt-1 text-sm sm:text-base text-gray-900">
                 {feedback.created_at 
                   ? format(new Date(feedback.created_at), 'PPpp')
                   : 'N/A'
@@ -188,28 +194,28 @@ export default function FeedbackDetailPage() {
             </div>
             
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500">Customer Name</dt>
-              <dd className="mt-1 text-sm text-gray-900">{feedback.name}</dd>
+              <dt className="text-xs sm:text-sm font-medium text-gray-500">Customer Name</dt>
+              <dd className="mt-1 text-sm sm:text-base text-gray-900 break-words">{feedback.name}</dd>
             </div>
             
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500">Customer Email</dt>
-              <dd className="mt-1 text-sm text-gray-900">{feedback.email}</dd>
+              <dt className="text-xs sm:text-sm font-medium text-gray-500">Customer Email</dt>
+              <dd className="mt-1 text-sm sm:text-base text-gray-900 break-all">{feedback.email}</dd>
             </div>
             
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500">Rating</dt>
-              <dd className="mt-1 text-sm text-gray-900 flex">
+              <dt className="text-xs sm:text-sm font-medium text-gray-500">Rating</dt>
+              <dd className="mt-1 flex items-center flex-wrap gap-2">
                 <div className="flex">
                   {renderRatingStars(feedback.rating)}
                 </div>
-                <span className="ml-2 font-medium">{feedback.rating}/5</span>
+                <span className="text-sm sm:text-base font-medium text-gray-900">{feedback.rating}/5</span>
               </dd>
             </div>
             
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500">Feedback Option</dt>
-              <dd className="mt-1 text-sm text-gray-900">
+              <dt className="text-xs sm:text-sm font-medium text-gray-500">Feedback Option</dt>
+              <dd className="mt-1">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getBadgeColor(feedback.feedback_option)}`}>
                   {feedback.feedback_option || 'N/A'}
                 </span>
@@ -217,8 +223,8 @@ export default function FeedbackDetailPage() {
             </div>
             
             <div className="sm:col-span-2">
-              <dt className="text-sm font-medium text-gray-500">Feedback Comments</dt>
-              <dd className="mt-1 text-sm text-gray-900 bg-gray-50 p-4 rounded border border-gray-200 whitespace-pre-wrap">
+              <dt className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Feedback Comments</dt>
+              <dd className="mt-1 text-sm sm:text-base text-gray-900 bg-gray-50 p-3 sm:p-4 rounded border border-gray-200 whitespace-pre-wrap break-words">
                 {feedback.feedback || 'No comments provided'}
               </dd>
             </div>

@@ -85,47 +85,97 @@ export default function FeedbackPage() {
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
-      <div className="sm:flex sm:items-center sm:justify-between">
+    <div className="px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Customer Feedback</h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Customer Feedback</h1>
+          <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-700">
             Review customer feedback and ratings for your services
           </p>
         </div>
-        <div className="mt-4 sm:mt-0">
+        <div className="w-full sm:w-auto">
           <button
             type="button"
             onClick={fetchFeedbacks}
             disabled={loading}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 
+            className="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 
                       text-sm font-medium rounded-md shadow-sm text-gray-700 
                       bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 
                       focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            <ArrowPathIcon className={`-ml-1 mr-2 h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+            <ArrowPathIcon className={`-ml-1 mr-2 h-4 w-4 sm:h-5 sm:w-5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="mt-6 bg-red-50 border-l-4 border-red-400 p-4">
+        <div className="mt-4 sm:mt-6 bg-red-50 border-l-4 border-red-400 p-3 sm:p-4">
           <div className="flex">
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="ml-0 sm:ml-3">
+              <p className="text-xs sm:text-sm text-red-700">{error}</p>
             </div>
           </div>
         </div>
       )}
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:mt-8">
         <div className="lg:col-span-1">
           <FeedbackStats />
         </div>
         
         <div className="lg:col-span-3">
-          <div className="flex flex-col">
+          {/* Mobile: Card View */}
+          <div className="block sm:hidden space-y-3">
+            {loading ? (
+              <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+              </div>
+            ) : feedbacks.length > 0 ? (
+              feedbacks.map((feedback) => (
+                <div
+                  key={feedback.id}
+                  onClick={() => handleViewFeedback(feedback.id)}
+                  className="bg-white rounded-lg shadow p-4 border border-gray-200 active:bg-gray-50 cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="font-semibold text-sm text-gray-900 mb-1">
+                        {feedback.booking_number || 'N/A'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {formatDistanceToNow(new Date(feedback.created_at), { addSuffix: true })}
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeColor(feedback.feedback_option)}`}>
+                      {feedback.feedback_option || 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="mb-2">
+                    <div className="font-medium text-sm text-gray-900">{feedback.name}</div>
+                    <div className="text-xs text-gray-500">{feedback.email}</div>
+                  </div>
+                  
+                  <div className="flex items-center mb-2">
+                    {renderRatingStars(feedback.rating)}
+                    <span className="ml-2 text-xs text-gray-500">{feedback.rating}/5</span>
+                  </div>
+                  
+                  <div className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+                    {feedback.feedback || 'No comments provided'}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow">
+                <p className="text-sm text-gray-500">No feedback data available</p>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop: Table View */}
+          <div className="hidden sm:flex flex-col">
             <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
               <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
                 <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
