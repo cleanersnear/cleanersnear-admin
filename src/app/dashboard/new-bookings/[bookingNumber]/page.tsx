@@ -22,6 +22,7 @@ import { newBookingService } from '@/config/newDatabase';
 import ServiceDetailsSection from './components/ServiceDetailsSection';
 import CustomerSubDetails from './components/CustomerSubDetails';
 import ConnectTeamButton from './components/ConnectTeamButton';
+import EmailActions from './components/EmailActions';
 
 interface PricingData {
   totalPrice?: number;
@@ -286,6 +287,12 @@ export default function NewBookingDetailPage() {
 
         {/* Mobile Layout */}
         <div className="sm:hidden space-y-4">
+          {/* Email Actions - Mobile */}
+          <EmailActions 
+            booking={booking} 
+            onEmailSent={fetchBookingDetails}
+          />
+
           {/* Booking Summary - Mobile */}
           <div className="bg-white shadow rounded-lg p-4">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Booking Summary</h3>
@@ -436,6 +443,12 @@ export default function NewBookingDetailPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Email Actions */}
+            <EmailActions 
+              booking={booking} 
+              onEmailSent={fetchBookingDetails}
+            />
+
             {/* Booking Summary */}
             <div className="bg-white shadow rounded-lg p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Booking Summary</h3>
