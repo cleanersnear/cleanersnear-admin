@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-type NotificationType = 'booking' | 'quick_booking' | 'subscription' | 'contact' | string
+type NotificationType = 'booking' | 'quick_booking' | 'subscription' | 'contact' | 'feedback' | string
 
 interface NotificationRecord {
   id: string
@@ -43,7 +43,7 @@ export default function NotificationComponent() {
       const { data, error } = await supabase
         .from('notifications')
         .select('id, type, title, content, status, metadata, created_at')
-        .in('type', ['booking', 'quick_booking', 'subscription'])
+        .in('type', ['new_main_booking', 'new_quick_booking', 'subscription', 'feedback', 'contact'])
         .order('created_at', { ascending: false })
         .limit(20)
 
@@ -52,15 +52,23 @@ export default function NotificationComponent() {
         return
       }
 
-      const list: NotificationRecord[] = (data ?? []).map((item) => ({
-        id: item.id,
-        type: item.type as NotificationType,
-        title: item.title,
-        content: item.content,
-        status: item.status as 'read' | 'unread',
-        metadata: item.metadata ?? null,
-        created_at: item.created_at,
-      }))
+      // Map database types to simplified frontend types
+      const list: NotificationRecord[] = (data ?? []).map((item) => {
+        let mappedType = item.type as NotificationType
+        if (item.type === 'new_main_booking') mappedType = 'booking'
+        if (item.type === 'new_quick_booking') mappedType = 'quick_booking'
+        // feedback, contact, subscription stay as-is
+        
+        return {
+          id: item.id,
+          type: mappedType,
+          title: item.title,
+          content: item.content,
+          status: item.status as 'read' | 'unread',
+          metadata: item.metadata ?? null,
+          created_at: item.created_at,
+        }
+      })
 
       setNotifications(list)
       setUnreadCount(list.filter(n => n.status === 'unread').length)
@@ -85,9 +93,9 @@ export default function NotificationComponent() {
         break
       }
       case 'quick_booking': {
-        const quickId = meta.quickBookingId as string | undefined
+        const bookingNumber = meta.bookingNumber as string | undefined
         router.push(
-          quickId ? `/dashboard/quick-bookings/${quickId}` : '/dashboard/quick-bookings'
+          bookingNumber ? `/dashboard/quick-bookings/${bookingNumber}` : '/dashboard/quick-bookings'
         )
         break
       }
@@ -97,6 +105,10 @@ export default function NotificationComponent() {
       }
       case 'contact': {
         router.push('/dashboard/messages')
+        break
+      }
+      case 'feedback': {
+        router.push('/dashboard/feedback')
         break
       }
       default: {
@@ -133,6 +145,23 @@ export default function NotificationComponent() {
       setUnreadCount(prev => Math.max(prev - 1, 0))
     } catch (error) {
       console.error('Error marking notification as read:', error)
+    }
+  }
+
+  const getNotificationTypeColor = (type: NotificationType) => {
+    switch (type) {
+      case 'booking':
+        return 'bg-blue-100 text-blue-700'
+      case 'quick_booking':
+        return 'bg-orange-100 text-orange-700'
+      case 'subscription':
+        return 'bg-purple-100 text-purple-700'
+      case 'contact':
+        return 'bg-green-100 text-green-700'
+      case 'feedback':
+        return 'bg-pink-100 text-pink-700'
+      default:
+        return 'bg-slate-100 text-slate-700'
     }
   }
 
@@ -215,7 +244,7 @@ export default function NotificationComponent() {
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm sm:text-base font-medium">
                       {notification.title}
-                      <span className="ml-2 text-xs font-normal px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full capitalize">
+                      <span className={`ml-2 text-xs font-normal px-2 py-0.5 rounded-full capitalize ${getNotificationTypeColor(notification.type)}`}>
                         {notification.type.replace('_', ' ')}
                       </span>
                     </h4>
