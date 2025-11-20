@@ -16,7 +16,7 @@ import {
   QuestionMarkCircleIcon,
   ChatBubbleLeftRightIcon,
   ArrowLeftStartOnRectangleIcon as SignOutIcon,
-  
+  CurrencyDollarIcon,
   Bars3Icon,
   XMarkIcon,
   ArrowLeftIcon,
@@ -41,6 +41,7 @@ const navigation = [
   { name: 'Employees', href: '/dashboard/employees', icon: UserGroupIcon },
   { name: 'Payroll', href: '/dashboard/payroll', icon: BriefcaseIcon },
   { name: 'Payments', href: '/dashboard/payments', icon: FolderIcon },
+  { name: 'Expenses', href: '/dashboard/expenses', icon: CurrencyDollarIcon },
   { 
     name: 'Content Management',
     children: [
