@@ -22,6 +22,7 @@ import { newBookingService } from '@/config/newDatabase';
 import ServiceDetailsSection from './components/ServiceDetailsSection';
 import CustomerSubDetails from './components/CustomerSubDetails';
 import ConnectTeamButton from './components/ConnectTeamButton';
+import CreateWixCustomerButton from './components/CreateWixCustomerButton';
 import EmailActions from './components/EmailActions';
 
 interface PricingData {
@@ -245,6 +246,7 @@ export default function NewBookingDetailPage() {
                         </button>
                       </div>
                       <ConnectTeamButton booking={booking} serviceDetails={serviceDetails || undefined} />
+                      <CreateWixCustomerButton booking={booking} />
                     </div>
           </div>
 
@@ -279,7 +281,7 @@ export default function NewBookingDetailPage() {
                           </button>
                         </div>
                         <ConnectTeamButton booking={booking} serviceDetails={serviceDetails || undefined} />
-                        
+                        <CreateWixCustomerButton booking={booking} />
                       </div>
             </div>
           </div>

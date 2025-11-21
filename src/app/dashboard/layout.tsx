@@ -33,15 +33,19 @@ const navigation = [
     children: [
       { name: 'New Bookings', href: '/dashboard/new-bookings', icon: CalendarIcon },
       { name: 'Quick Bookings', href: '/dashboard/quick-bookings', icon: CalendarIcon },
-      
     ]
   },
   { name: 'Calendar', href: '/dashboard/calendar', icon: CalendarIcon },
   { name: 'Customers', href: '/dashboard/customers', icon: UsersIcon },
-  { name: 'Employees', href: '/dashboard/employees', icon: UserGroupIcon },
-  { name: 'Payroll', href: '/dashboard/payroll', icon: BriefcaseIcon },
-  { name: 'Payments', href: '/dashboard/payments', icon: FolderIcon },
-  { name: 'Expenses', href: '/dashboard/expenses', icon: CurrencyDollarIcon },
+  {
+    name: 'Operations',
+    children: [
+      { name: 'Employees', href: '/dashboard/employees', icon: UserGroupIcon },
+      { name: 'Payroll', href: '/dashboard/payroll', icon: BriefcaseIcon },
+      { name: 'Payments', href: '/dashboard/payments', icon: FolderIcon },
+      { name: 'Expenses', href: '/dashboard/expenses', icon: CurrencyDollarIcon },
+    ]
+  },
   { 
     name: 'Content Management',
     children: [
